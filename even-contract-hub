@@ -1,0 +1,2204 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>事件合约市场 · Demo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #06060b;
+      --surface: #14141c;
+      --surface2: #1e1e2a;
+      --border: #2a2a3a;
+      --text: #f4f4f8;
+      --muted: #8a8a9a;
+      --green: #34d399;
+      --green-dim: rgba(52, 211, 153, 0.14);
+      --red: #f87171;
+      --red-dim: rgba(248, 113, 113, 0.12);
+      --accent: #60a5fa;
+      --heat: #fbbf24;
+      --gold: #fde68a;
+      --radius: 12px;
+      --font: "DM Sans", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      --title-card: 16px;
+      --title-module: clamp(19px, 2.25vw, 24px);
+      --title-hero: clamp(24px, 3.15vw, 34px);
+      --weight-title: 800;
+      --weight-card: 700;
+      /* 事件类型 / 热门专题：分类标题统一量级 */
+      --hub-category-heading: clamp(19px, 2.05vw, 21px);
+    }
+    .hub-category-heading {
+      font-size: var(--hub-category-heading);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1.28;
+      margin: 0 0 12px;
+      color: var(--text);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      min-height: 100vh;
+      position: relative;
+      overflow-x: hidden;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: -20%;
+      background:
+        radial-gradient(ellipse 50% 40% at 18% 8%, rgba(37, 99, 235, 0.2), transparent 55%),
+        radial-gradient(ellipse 45% 35% at 88% 15%, rgba(16, 185, 129, 0.14), transparent 50%),
+        radial-gradient(ellipse 40% 45% at 50% 100%, rgba(245, 158, 11, 0.1), transparent 45%);
+      animation: ambient-drift 18s ease-in-out infinite alternate;
+      pointer-events: none;
+      z-index: 0;
+    }
+    @keyframes ambient-drift {
+      0% { transform: translate(0, 0) scale(1); opacity: 1; }
+      100% { transform: translate(2%, -1%) scale(1.04); opacity: 0.94; }
+    }
+    a { color: var(--accent); text-decoration: none; }
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 16px 16px 80px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .site-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 10px 0 22px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      margin-bottom: 20px;
+    }
+    .site-brand {
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      color: var(--text);
+    }
+    .site-brand span { color: #93c5fd; font-weight: 700; }
+    .site-nav-links {
+      display: flex;
+      gap: 20px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .site-nav-links a {
+      color: var(--muted);
+      transition: color 0.15s;
+    }
+    .site-nav-links a:hover { color: var(--text); }
+    .site-nav-links .here {
+      color: var(--gold);
+      pointer-events: none;
+    }
+
+    .module-title {
+      font-size: var(--title-module);
+      font-weight: var(--weight-title);
+      line-height: 1.3;
+      margin: 0 0 14px;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      letter-spacing: -0.02em;
+    }
+    .section-kicker {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #93c5fd;
+      margin-bottom: 8px;
+    }
+
+    /* 首屏大卡：与下方「市场成交动态」等模块同宽、同窗格 */
+    .hero-mega {
+      position: relative;
+      padding: 0;
+      margin-bottom: 12px;
+      border: none;
+      background: none;
+      overflow: visible;
+    }
+    .hero-card-shell {
+      position: relative;
+      z-index: 1;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: linear-gradient(180deg, #16161f 0%, #12121a 100%);
+      padding: 14px 18px 16px;
+      overflow: hidden;
+    }
+    @media (max-width: 640px) {
+      .hero-card-shell {
+        padding: 12px 14px 14px;
+        border-radius: 14px;
+      }
+    }
+    .hero-carousel-wrap {
+      position: relative;
+      z-index: 1;
+    }
+    .hero-carousel {
+      position: relative;
+    }
+    /* Kalshi 式：细边框圆钮 + 序号（位于标题行右侧） */
+    .hero-inline-nav {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+    .hero-inline-nav-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: rgba(10, 10, 16, 0.55);
+      color: #e5e7eb;
+      font-size: 18px;
+      line-height: 1;
+      font-weight: 400;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+      padding: 0;
+    }
+    .hero-inline-nav-btn:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.28);
+      color: #fff;
+    }
+    .hero-inline-nav-btn:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+    .hero-inline-nav-count {
+      font-size: 12px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      color: #9ca3af;
+      min-width: 3.2em;
+      text-align: center;
+      user-select: none;
+      letter-spacing: 0.02em;
+    }
+    .hero-carousel-mask {
+      overflow: hidden;
+      border-radius: 10px;
+      margin: 0;
+    }
+    .hero-carousel-track {
+      display: flex;
+      transition: transform 0.5s cubic-bezier(0.25, 0.85, 0.2, 1);
+    }
+    .hero-carousel-track.hero-carousel-track--instant {
+      transition: none;
+    }
+    .hero-slide {
+      flex: 0 0 100%;
+      min-width: 0;
+      padding: 0 2px 2px;
+      box-sizing: border-box;
+    }
+    .hero-slide-main {
+      display: block;
+      position: relative;
+      padding: 4px 2px 8px;
+      border-radius: 0;
+      background: none;
+      border: none;
+      box-shadow: none;
+      color: inherit;
+    }
+    .hero-lead {
+      display: flex;
+      flex-direction: row;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 10px;
+      min-width: 0;
+    }
+    .hero-lead-main {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+    .hero-lead-stat {
+      flex: 0 0 auto;
+      min-width: 0;
+    }
+    .hero-lead-stat .hero-vol {
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 6px;
+      padding: 6px 10px;
+      text-align: right;
+    }
+    .hero-lead-stat .hero-vol > div {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 2px;
+    }
+    @media (max-width: 640px) {
+      .hero-lead {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .hero-lead-stat .hero-vol {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: baseline;
+        text-align: left;
+      }
+      .hero-lead-stat .hero-vol > div {
+        align-items: flex-start;
+      }
+    }
+    .hero-card-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      color: #fde047;
+      margin-bottom: 5px;
+    }
+    .hero-card-tag .live-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #34d399;
+      box-shadow: 0 0 10px #34d399;
+      animation: live-pulse 1.2s ease infinite;
+    }
+    @keyframes live-pulse { 50% { opacity: 0.5; } }
+    .hero-title-row {
+      display: flex;
+      flex-direction: row;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 6px;
+    }
+    .hero-title-row .hero-inline-nav {
+      flex-shrink: 0;
+      margin-top: 3px;
+    }
+    a.hero-title-link {
+      flex: 1 1 auto;
+      min-width: 0;
+      color: inherit;
+      text-decoration: none;
+    }
+    a.hero-title-link:hover .hero-event-title {
+      color: #93c5fd;
+    }
+    .hero-slide-main .hero-event-title {
+      font-size: var(--title-hero);
+      font-weight: var(--weight-title);
+      letter-spacing: -0.025em;
+      margin: 0;
+      line-height: 1.22;
+      color: var(--text);
+    }
+    @media (max-width: 640px) {
+      .hero-title-row {
+        flex-wrap: wrap;
+      }
+      .hero-title-row .hero-inline-nav {
+        margin-top: 0;
+        width: 100%;
+        justify-content: flex-end;
+      }
+    }
+    .hero-card-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 10px;
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 600;
+      margin-bottom: 0;
+    }
+    .hero-card-meta strong { color: #86efac; font-weight: 700; }
+    /* 主视区：走势看板（大）+ 右侧窄栏逐笔（固定宽高，列表内滚动） */
+    .hero-chart-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: start;
+      margin-bottom: 10px;
+      min-width: 0;
+    }
+    @media (max-width: 720px) {
+      .hero-chart-row {
+        grid-template-columns: 1fr;
+      }
+    }
+    .hero-spark-wrap {
+      position: relative;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #0c0c12;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      margin-bottom: 0;
+      min-width: 0;
+      min-height: 236px;
+      text-decoration: none;
+      color: inherit;
+    }
+    a.hero-spark-wrap {
+      display: flex;
+      flex-direction: column;
+    }
+    a.hero-spark-wrap:hover {
+      border-color: rgba(147, 197, 253, 0.22);
+    }
+    .hero-spark-wrap .spark-label {
+      position: absolute;
+      top: 6px;
+      left: 12px;
+      font-size: 10px;
+      font-weight: 700;
+      color: #9ca3af;
+      letter-spacing: 0.04em;
+      z-index: 1;
+      max-width: calc(100% - 120px);
+      line-height: 1.35;
+    }
+    .hero-spark {
+      display: block;
+      width: 100%;
+      height: 236px;
+      flex: 1 1 auto;
+      min-height: 236px;
+      cursor: crosshair;
+      touch-action: none;
+    }
+    .hero-foot-compact {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .hero-vol {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 0;
+      padding: 7px 10px;
+      border-radius: 10px;
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .hero-vol .lbl { font-size: 12px; color: var(--muted); font-weight: 600; }
+    .hero-vol .num {
+      font-size: clamp(22px, 2.6vw, 30px);
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+      color: var(--green);
+      text-shadow: 0 0 28px rgba(52, 211, 153, 0.38);
+      line-height: 1.1;
+    }
+    .hero-vol .num.tick { animation: vol-pop 0.5s ease; }
+    @keyframes vol-pop {
+      40% { transform: scale(1.04); }
+    }
+    .hero-vol .dvol {
+      font-size: 13px;
+      font-weight: 800;
+      color: #fbbf24;
+    }
+    .hero-top-title {
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      color: #6b7280;
+      margin-bottom: 4px;
+    }
+    .hero-duel {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .hero-duel.hero-duel--compact {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    @media (max-width: 640px) {
+      .hero-duel.hero-duel--compact {
+        grid-template-columns: 1fr;
+      }
+    }
+    .hero-outcome {
+      padding: 6px 8px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .hero-duel--compact .hero-outcome {
+      padding: 5px 7px;
+    }
+    .hero-outcome-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 4px;
+    }
+    .hero-outcome-name {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .hero-outcome-pct {
+      font-size: 13px;
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+      color: var(--green);
+      flex-shrink: 0;
+    }
+    .hero-duel--compact .hero-meter {
+      margin-bottom: 4px;
+    }
+    .hero-meter {
+      height: 4px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.06);
+      overflow: hidden;
+      margin-bottom: 5px;
+    }
+    .hero-meter > i {
+      display: block;
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #3b82f6, #34d399);
+      transition: width 0.35s ease;
+    }
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 4px;
+    }
+    .hero-duel--compact .hero-pill:last-child {
+      display: flex;
+      flex: 1 1 100%;
+      margin-top: 2px;
+      font-size: 9px;
+      padding: 3px 6px;
+      text-align: center;
+      justify-content: center;
+    }
+    .hero-pill {
+      display: inline-flex;
+      align-items: center;
+      font-size: 9px;
+      font-weight: 800;
+      padding: 3px 6px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(0, 0, 0, 0.25);
+      color: #c4c4d8;
+    }
+    .hero-pill.yes {
+      border-color: rgba(52, 211, 153, 0.45);
+      color: var(--green);
+      background: var(--green-dim);
+    }
+    .hero-pill.no {
+      border-color: rgba(248, 113, 113, 0.4);
+      color: var(--red);
+      background: var(--red-dim);
+    }
+    .hero-cta {
+      display: inline-block;
+      margin-top: 8px;
+      font-size: 11px;
+      font-weight: 800;
+      color: #93c5fd;
+      text-decoration: none;
+    }
+    .hero-cta:hover {
+      text-decoration: underline;
+    }
+
+    .hero-dots {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 10px;
+      position: relative;
+      z-index: 2;
+    }
+    .hero-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      background: rgba(255, 255, 255, 0.2);
+      transition: transform 0.15s, background 0.15s;
+    }
+    .hero-dot[aria-current="true"] {
+      background: var(--gold);
+      transform: scale(1.25);
+      box-shadow: 0 0 14px rgba(251, 191, 36, 0.5);
+    }
+
+    /* 逐笔成交：右栏固定宽度；总高与看板一致，列表区限高滚动 */
+    .hero-bubbles-strip {
+      display: flex;
+      flex-direction: column;
+      border-radius: 10px;
+      background: rgba(12, 12, 18, 0.65);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      overflow: hidden;
+      margin-bottom: 0;
+      box-sizing: border-box;
+      min-width: 0;
+    }
+    .hero-chart-row .hero-bubbles-strip {
+      width: clamp(152px, 19vw, 196px);
+      max-width: 196px;
+      height: 236px;
+      max-height: 236px;
+      flex-shrink: 0;
+      align-self: start;
+    }
+    .hero-bubbles-strip h4 {
+      padding: 6px 8px;
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #6b7280;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      flex-shrink: 0;
+    }
+    .hero-bubbles-strip .hero-bubbles-list {
+      flex: 1 1 0;
+      min-height: 0;
+      max-height: 188px;
+      overflow-x: hidden;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      padding: 5px 6px 6px;
+      position: relative;
+      scroll-behavior: auto;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(90, 90, 120, 0.55) transparent;
+      mask-image: linear-gradient(180deg, transparent 0%, #000 10%, #000 90%, transparent 100%);
+      -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 10%, #000 90%, transparent 100%);
+    }
+    @media (max-width: 720px) {
+      .hero-chart-row .hero-bubbles-strip {
+        width: 100%;
+        max-width: none;
+        height: auto;
+        max-height: none;
+      }
+      .hero-bubbles-strip .hero-bubbles-list {
+        max-height: 152px;
+      }
+    }
+    .hero-bubbles-list {
+      overflow-x: hidden;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      padding: 8px 10px 10px;
+      position: relative;
+      scroll-behavior: auto;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(90, 90, 120, 0.55) transparent;
+      mask-image: linear-gradient(180deg, transparent 0%, #000 8%, #000 92%, transparent 100%);
+      -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 8%, #000 92%, transparent 100%);
+    }
+    .hero-bubbles-list::-webkit-scrollbar {
+      width: 5px;
+    }
+    .hero-bubbles-list::-webkit-scrollbar-thumb {
+      background: rgba(90, 90, 120, 0.55);
+      border-radius: 3px;
+    }
+    .hero-bubble {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 7px 9px;
+      margin-bottom: 4px;
+      border-radius: 10px;
+      font-size: 11px;
+      flex-shrink: 0;
+      animation: hero-bubble-in 0.28s ease-out;
+    }
+    .hero-bubbles-strip .hero-bubble {
+      padding: 5px 6px;
+      gap: 5px;
+      font-size: 10px;
+      margin-bottom: 3px;
+      border-radius: 8px;
+    }
+    @keyframes hero-bubble-in {
+      from { opacity: 0; transform: translateY(14px) scale(0.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .hero-bubble.buy-yes {
+      background: var(--green-dim);
+      border-left: 3px solid var(--green);
+    }
+    .hero-bubble.buy-no {
+      background: var(--red-dim);
+      border-left: 3px solid var(--red);
+    }
+    .hero-bubble span:first-child {
+      color: #e5e7eb;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .hero-bubble-amt {
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+      color: var(--gold);
+      flex-shrink: 0;
+      text-shadow: 0 0 12px rgba(251, 191, 36, 0.3);
+    }
+
+    /* 市场成交动态（与 index 对齐） */
+    .mid-section { margin-top: 10px; }
+    .hot-trades-section {
+      position: relative;
+      background: linear-gradient(180deg, #16161f 0%, #12121a 100%);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: visible;
+      box-shadow:
+        0 0 0 1px rgba(245, 158, 11, 0.06),
+        0 18px 56px rgba(0, 0, 0, 0.45);
+    }
+    .hot-trades-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      padding: 16px 18px;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(90deg, rgba(239, 68, 68, 0.12), rgba(37, 99, 235, 0.14), rgba(245, 158, 11, 0.1));
+      border-radius: 16px 16px 0 0;
+    }
+    .hot-trades-title {
+      font-size: var(--title-module);
+      font-weight: var(--weight-title);
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      line-height: 1.25;
+      color: var(--text);
+      letter-spacing: -0.02em;
+    }
+    .hot-trades-title .pulse-dot {
+      width: 9px;
+      height: 9px;
+      background: #f59e0b;
+      border-radius: 50%;
+      animation: pulse-dot 1.2s ease-in-out infinite;
+      box-shadow: 0 0 14px #f59e0b;
+      flex-shrink: 0;
+    }
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.65; transform: scale(1.15); }
+    }
+    .hot-trades-live {
+      font-size: 12px;
+      color: #fbbf24;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+    .hot-toast-layer {
+      position: absolute;
+      right: 14px;
+      top: 56px;
+      width: min(280px, 42vw);
+      pointer-events: none;
+      z-index: 5;
+    }
+    .hot-toast {
+      background: linear-gradient(90deg, rgba(16, 185, 129, 0.38), rgba(37, 99, 235, 0.22));
+      border: 1px solid rgba(52, 211, 153, 0.45);
+      border-radius: 10px;
+      padding: 10px 12px;
+      margin-bottom: 8px;
+      font-size: 12px;
+      color: #e2e8f0;
+      animation: toast-pop 3.2s ease-out forwards;
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.4);
+    }
+    .hot-toast.sell-toast {
+      background: linear-gradient(90deg, rgba(239, 68, 68, 0.28), rgba(37, 99, 235, 0.15));
+      border-color: rgba(248, 113, 113, 0.45);
+    }
+    @keyframes toast-pop {
+      0% { opacity: 0; transform: translateX(18px) scale(0.96); }
+      12% { opacity: 1; transform: translateX(0) scale(1); }
+      78% { opacity: 1; transform: translateY(-3px); }
+      100% { opacity: 0; transform: translateX(-10px) translateY(-24px); }
+    }
+    .hot-tracks {
+      display: flex;
+      gap: 12px;
+      padding: 12px;
+      border-radius: 0 0 16px 16px;
+    }
+    .hot-track-col {
+      flex: 1;
+      min-width: 0;
+      height: 118px;
+      overflow: hidden;
+      position: relative;
+    }
+    .hot-trades-viewport {
+      height: 100%;
+      overflow: hidden;
+      position: relative;
+      mask-image: linear-gradient(180deg, transparent, #000 6%, #000 94%, transparent);
+      -webkit-mask-image: linear-gradient(180deg, transparent, #000 6%, #000 94%, transparent);
+    }
+    .hot-trades-viewport::before,
+    .hot-trades-viewport::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 16px;
+      z-index: 2;
+      pointer-events: none;
+    }
+    .hot-trades-viewport::before {
+      top: 0;
+      background: linear-gradient(180deg, #12121a, transparent);
+    }
+    .hot-trades-viewport::after {
+      bottom: 0;
+      background: linear-gradient(0deg, #12121a, transparent);
+    }
+    .hot-track-inner { animation: hot-scroll-up linear infinite; }
+    .hot-track-col:nth-child(1) .hot-track-inner { animation-duration: 16s; }
+    .hot-track-col:nth-child(2) .hot-track-inner { animation-duration: 20s; animation-delay: -5s; }
+    .hot-track-col:nth-child(3) .hot-track-inner { animation-duration: 24s; animation-delay: -10s; }
+    @keyframes hot-scroll-up {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(-50%); }
+    }
+    @media (max-width: 900px) {
+      .hot-track-col:nth-child(3) { display: none; }
+      .hot-track-col { height: 132px; }
+      .hot-toast-layer { max-width: 70vw; top: 52px; }
+    }
+    .trade-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      margin-bottom: 6px;
+      background: rgba(42, 42, 58, 0.55);
+      border-radius: 10px;
+      border-left: 3px solid #2563eb;
+      font-size: 12px;
+      animation: row-flash 0.45s ease-out;
+    }
+    .trade-row.sell { border-left-color: #ef4444; }
+    .trade-row.buy { border-left-color: #10b981; }
+    @keyframes row-flash {
+      from { background: rgba(37, 99, 235, 0.22); transform: translateX(5px); }
+      to { background: rgba(42, 42, 58, 0.55); transform: translateX(0); }
+    }
+    .trade-side {
+      font-size: 10px;
+      font-weight: 800;
+      padding: 2px 6px;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+    .trade-side.yes { background: rgba(16, 185, 129, 0.28); color: #34d399; }
+    .trade-side.no { background: rgba(239, 68, 68, 0.22); color: #f87171; }
+    .trade-detail {
+      flex: 1;
+      min-width: 0;
+      color: #c4c4d4;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .trade-detail strong { color: #fff; }
+    .trade-amt {
+      font-weight: 800;
+      color: #fbbf24;
+      flex-shrink: 0;
+      font-variant-numeric: tabular-nums;
+      text-shadow: 0 0 12px rgba(251, 191, 36, 0.25);
+    }
+    .trade-time { font-size: 11px; color: #6b7280; flex-shrink: 0; }
+
+    /* 类型聚合 + 专题 */
+    .aggregate-section { margin-top: 36px; }
+    .aggregate-head {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+    .aggregate-head .module-title { margin-bottom: 0; }
+    .agg-triple {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px 16px;
+      align-items: start;
+    }
+    @media (max-width: 1024px) {
+      .agg-triple {
+        grid-template-columns: 1fr;
+      }
+    }
+    .agg-triple-col { scroll-margin-top: 24px; }
+    .agg-triple-col .hub-category-heading {
+      margin-bottom: 10px;
+    }
+    /* 与详情页侧栏「24h 市场最热事件」一致的简洁列表 */
+    .aggregate-section .hot24-card {
+      flex-shrink: 0;
+      background: linear-gradient(165deg, #1a1520 0%, #14141c 100%);
+      border: 1px solid rgba(251, 191, 36, 0.2);
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+    }
+    .aggregate-section .hot24-list { padding: 4px 0; }
+    .aggregate-section a.hot24-row {
+      display: grid;
+      grid-template-columns: 28px 1fr auto;
+      gap: 8px;
+      align-items: center;
+      padding: 10px 12px;
+      border-bottom: 1px solid rgba(42, 42, 58, 0.6);
+      font-size: 12px;
+      color: inherit;
+      text-decoration: none;
+      transition: background 0.15s;
+    }
+    .aggregate-section a.hot24-row:hover {
+      background: rgba(255, 255, 255, 0.04);
+    }
+    .aggregate-section a.hot24-row:last-child { border-bottom: 0; }
+    .aggregate-section .hot24-rank {
+      width: 26px;
+      height: 26px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 11px;
+      background: var(--surface2);
+      color: var(--muted);
+    }
+    .aggregate-section .hot24-list a.hot24-row:nth-child(1) .hot24-rank {
+      background: linear-gradient(135deg, #f59e0b, #ea580c);
+      color: #fff;
+    }
+    .aggregate-section .hot24-list a.hot24-row:nth-child(2) .hot24-rank {
+      color: #fcd34d;
+      border: 1px solid rgba(251, 191, 36, 0.35);
+    }
+    .aggregate-section .hot24-list a.hot24-row:nth-child(3) .hot24-rank {
+      color: #fdba74;
+      border: 1px solid rgba(253, 186, 116, 0.25);
+    }
+    .aggregate-section .hot24-name {
+      font-weight: 600;
+      color: #f3f4f6;
+      line-height: 1.35;
+      min-width: 0;
+    }
+    .aggregate-section .hot24-vol {
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      color: #6ee7b7;
+      font-size: 11px;
+      white-space: nowrap;
+    }
+
+    .topic-section { margin-top: 40px; }
+    .topic-anchor-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      margin: -4px 0 20px;
+    }
+    .topic-anchor-tab {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px 16px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      text-decoration: none;
+      transition: color 0.15s, border-color 0.15s, background 0.15s, box-shadow 0.15s;
+    }
+    .topic-anchor-tab:hover {
+      color: var(--text);
+      border-color: rgba(147, 197, 253, 0.35);
+      background: rgba(59, 130, 246, 0.12);
+    }
+    .topic-anchor-tab:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+    .topic-block-anchor {
+      scroll-margin-top: 20px;
+    }
+    .topic-block-anchor:target {
+      background: rgba(251, 191, 36, 0.06);
+    }
+    /* 单层外壳：专题之间仅浅色分割线，避免多层卡片嵌套 */
+    .topic-stack {
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: linear-gradient(180deg, #16161f 0%, #12121a 100%);
+      overflow: hidden;
+    }
+    .topic-block {
+      padding: 20px 18px 12px;
+    }
+    .topic-block + .topic-block {
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .topic-band-head {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .topic-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .topic-block h2.hub-category-heading {
+      margin: 0 0 6px;
+    }
+    .topic-block .sub {
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .topic-scroll {
+      display: flex;
+      gap: 14px;
+      overflow-x: auto;
+      padding: 4px 0 16px;
+      margin: 0;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+    }
+    .topic-scroll::-webkit-scrollbar { height: 7px; }
+    .topic-scroll::-webkit-scrollbar-thumb {
+      background: rgba(90, 90, 120, 0.5);
+      border-radius: 4px;
+    }
+    .topic-card {
+      flex: 0 0 268px;
+      scroll-snap-align: start;
+      max-width: 85vw;
+      display: block;
+      padding: 14px 15px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      transition: border-color 0.2s, background 0.15s;
+      color: inherit;
+      text-decoration: none;
+      box-shadow: none;
+    }
+    .topic-card:hover {
+      border-color: rgba(251, 191, 36, 0.35);
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .topic-card .z {
+      font-size: 10px;
+      font-weight: 800;
+      color: var(--heat);
+      margin-bottom: 8px;
+      letter-spacing: 0.04em;
+    }
+    .topic-card h3 {
+      font-size: 15px;
+      font-weight: 800;
+      margin-bottom: 10px;
+      line-height: 1.35;
+    }
+    .topic-card .row { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+    .topic-card .row b { color: var(--green); }
+
+    /* 合规 */
+    .trust-strip {
+      margin-top: 36px;
+      padding: 36px 28px 40px;
+      border-radius: 20px;
+      background:
+        linear-gradient(180deg, rgba(37, 99, 235, 0.12) 0%, transparent 45%),
+        linear-gradient(165deg, #1a1a24 0%, #12121a 100%);
+      border: 1px solid rgba(90, 90, 120, 0.35);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+    }
+    .trust-strip .trust-kicker {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #93c5fd;
+      margin-bottom: 10px;
+    }
+    .trust-strip .module-title {
+      margin-bottom: 10px;
+      max-width: 720px;
+    }
+    .trust-strip .trust-lead {
+      font-size: 15px;
+      color: #b4b4c4;
+      line-height: 1.65;
+      max-width: 720px;
+      margin-bottom: 28px;
+    }
+    .trust-strip .trust-lead em { font-style: normal; color: var(--gold); font-weight: 600; }
+    .trust-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+    @media (max-width: 900px) {
+      .trust-grid { grid-template-columns: 1fr; }
+    }
+    .trust-pillar {
+      padding: 22px 20px;
+      border-radius: 16px;
+      background: rgba(0, 0, 0, 0.28);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+    }
+    .trust-pillar:hover {
+      border-color: rgba(52, 211, 153, 0.35);
+      transform: translateY(-3px);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+    }
+    .trust-icon {
+      width: 52px;
+      height: 52px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      margin-bottom: 14px;
+      background: linear-gradient(145deg, rgba(59, 130, 246, 0.25), rgba(16, 185, 129, 0.15));
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .trust-pillar h3 {
+      font-size: 15px;
+      font-weight: var(--weight-card);
+      margin: 0 0 8px;
+      line-height: 1.35;
+      color: var(--text);
+    }
+    .trust-pillar p { font-size: 14px; color: #9ca3af; line-height: 1.6; }
+
+    /* FAQ */
+    .faq-section {
+      margin-top: 28px;
+      padding-top: 24px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .faq-section .module-title { margin-bottom: 14px; }
+    .faq-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 100%;
+    }
+    .faq-item {
+      background: linear-gradient(165deg, #1a1a24 0%, #14141c 100%);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .faq-item summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 16px 18px;
+      font-size: 15px;
+      font-weight: 700;
+      color: #f3f4f6;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      user-select: none;
+    }
+    .faq-item summary::-webkit-details-marker { display: none; }
+    .faq-item summary::after {
+      content: "+";
+      font-size: 18px;
+      font-weight: 300;
+      color: var(--muted);
+      flex-shrink: 0;
+    }
+    .faq-item[open] summary::after { content: "−"; color: var(--green); }
+    .faq-item summary:hover { background: rgba(255, 255, 255, 0.03); }
+    .faq-item .faq-a {
+      padding: 0 18px 16px;
+      font-size: 13px;
+      line-height: 1.65;
+      color: #9ca3af;
+      margin: 0;
+    }
+
+    .footer-legal {
+      margin-top: 32px;
+      padding: 18px;
+      border-radius: 12px;
+      font-size: 11px;
+      line-height: 1.55;
+      color: #6b7280;
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <nav class="site-nav" aria-label="主导航">
+      <div class="site-brand">Event<span>Trade</span> · Demo</div>
+      <div class="site-nav-links">
+        <span class="here">事件市场</span>
+        <a href="index.html">示例事件详情</a>
+      </div>
+    </nav>
+
+    <section class="hero-mega" aria-label="热门事件">
+      <div class="hero-card-shell">
+        <div class="hero-carousel-wrap">
+          <div class="hero-carousel">
+            <div class="hero-carousel-mask">
+              <div class="hero-carousel-track" id="heroTrack"></div>
+            </div>
+          </div>
+          <div class="hero-dots" id="heroDots" role="tablist" aria-label="热门事件圆点切换"></div>
+        </div>
+      </div>
+    </section>
+
+    <div class="mid-section">
+      <section class="hot-trades-section" aria-labelledby="hotTradesTitle">
+        <div class="hot-trades-head">
+          <h2 class="hot-trades-title" id="hotTradesTitle">
+            <span class="pulse-dot" aria-hidden="true"></span>
+            市场成交动态
+          </h2>
+          <span class="hot-trades-live">LIVE · 三路并行成交流 · 高密度刷新</span>
+        </div>
+        <div class="hot-toast-layer" id="hotToastLayer" aria-hidden="true"></div>
+        <div class="hot-tracks">
+          <div class="hot-track-col">
+            <div class="hot-trades-viewport">
+              <div class="hot-track-inner" id="hotTrackA"></div>
+            </div>
+          </div>
+          <div class="hot-track-col">
+            <div class="hot-trades-viewport">
+              <div class="hot-track-inner" id="hotTrackB"></div>
+            </div>
+          </div>
+          <div class="hot-track-col">
+            <div class="hot-trades-viewport">
+              <div class="hot-track-inner" id="hotTrackC"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <section class="aggregate-section" aria-labelledby="aggTitle">
+      <p class="section-kicker" id="aggTitle">按事件类型浏览</p>
+      <div class="aggregate-head">
+        <h2 class="module-title">事件类型聚合</h2>
+      </div>
+
+      <div class="agg-triple">
+        <div class="agg-triple-col" id="agg-politics">
+          <h3 class="hub-category-heading">政治</h3>
+          <div class="hot24-card">
+            <div class="hot24-list" id="gridPolitics"></div>
+          </div>
+        </div>
+        <div class="agg-triple-col" id="agg-finance">
+          <h3 class="hub-category-heading">金融</h3>
+          <div class="hot24-card">
+            <div class="hot24-list" id="gridFinance"></div>
+          </div>
+        </div>
+        <div class="agg-triple-col" id="agg-sports">
+          <h3 class="hub-category-heading">体育赛事</h3>
+          <div class="hot24-card">
+            <div class="hot24-list" id="gridSports"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="topic-section" aria-labelledby="topicSectionTitle">
+      <p class="section-kicker" id="topicSectionTitle">专题维度 · 与类型正交</p>
+      <h2 class="module-title">热门专题事件</h2>
+      <nav class="topic-anchor-tabs" aria-label="热门专题快速定位">
+        <a class="topic-anchor-tab" href="#topic-anchor-nba">NBA</a>
+        <a class="topic-anchor-tab" href="#topic-anchor-mlb">MLB</a>
+        <a class="topic-anchor-tab" href="#topic-anchor-crypto">Crypto</a>
+      </nav>
+
+      <div class="topic-stack">
+        <div class="topic-block topic-block-anchor" id="topic-anchor-nba">
+          <div class="topic-band-head">
+            <div class="topic-icon" aria-hidden="true">🏀</div>
+            <div>
+              <h2 class="hub-category-heading">NBA</h2>
+              <p class="sub">季后赛进程 · 球队晋级与总冠军概率</p>
+            </div>
+          </div>
+          <div class="topic-scroll" id="topicNba"></div>
+        </div>
+
+        <div class="topic-block topic-block-anchor" id="topic-anchor-mlb">
+          <div class="topic-band-head">
+            <div class="topic-icon" aria-hidden="true">⚾</div>
+            <div>
+              <h2 class="hub-category-heading">MLB</h2>
+              <p class="sub">联盟冠军线与跨联盟焦点对决</p>
+            </div>
+          </div>
+          <div class="topic-scroll" id="topicMlb"></div>
+        </div>
+
+        <div class="topic-block topic-block-anchor" id="topic-anchor-crypto">
+          <div class="topic-band-head">
+            <div class="topic-icon" aria-hidden="true">₿</div>
+            <div>
+              <h2 class="hub-category-heading">Crypto</h2>
+              <p class="sub">关键价位触达与周期叙事</p>
+            </div>
+          </div>
+          <div class="topic-scroll" id="topicCrypto"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="trust-strip" aria-labelledby="trustHeading">
+      <p class="trust-kicker">Event contracts · 不同于传统博彩盘口</p>
+      <h2 id="trustHeading" class="module-title">用「市场」的方式，交易赛事与宏观事件</h2>
+      <p class="trust-lead">
+        对可验证结果买入 <em>Yes</em> 或 <em>No</em>，价格随信息与成交实时变化；你可以在开赛前、进行中都调整观点。
+        下方三点帮你快速理解：这与「对赌庄家」的体育博彩不是同一类产品形态。
+      </p>
+      <div class="trust-grid">
+        <article class="trust-pillar">
+          <div class="trust-icon" aria-hidden="true">🛡️</div>
+          <h3>合规与清算纪律</h3>
+          <p>在受监管的交易所/清算框架下交易事件合约，规则与结算来源事先披露；资金按合约制度交割，非私盘对赌。</p>
+        </article>
+        <article class="trust-pillar">
+          <div class="trust-icon" aria-hidden="true">📉</div>
+          <h3>低门槛、按合约计价</h3>
+          <p>单笔以合约为单位计价与成交，无传统日内频繁交易限制包袱（以各平台规则为准）；费率结构公开可查。</p>
+        </article>
+        <article class="trust-pillar">
+          <div class="trust-icon" aria-hidden="true">🌐</div>
+          <h3>7×24 关注机会</h3>
+          <p>赛场有日程，市场可不眠：重大新闻、数据发布与跨时区事件，让盘面在非比赛时段同样活跃。</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="faq-section" aria-labelledby="faqTitle">
+      <h2 id="faqTitle" class="module-title">常见问题（FAQ）</h2>
+      <div class="faq-list">
+        <details class="faq-item">
+          <summary>什么是事件合约？和体育赛事博彩有什么区别？</summary>
+          <p class="faq-a">事件合约的标的多为可公开验证的客观结果（如赛事冠军、数据指标是否达标），价格在市场上由买卖盘形成；传统体育博彩多为庄家开盘与对赌模型。具体规则与适用法规以各平台披露及产品说明为准。</p>
+        </details>
+        <details class="faq-item">
+          <summary>Yes / No 价格代表什么？</summary>
+          <p class="faq-a">示意页中美分价格可理解为市场隐含的「发生 / 不发生」倾向的报价；结算时若您持有的方向与最终结果一致，通常按约定面值（如每份 $1）兑付，否则为 0。实际以交易端规则为准。</p>
+        </details>
+        <details class="faq-item">
+          <summary>本页数据是真实的吗？</summary>
+          <p class="faq-a">本站点为产品演示（Demo），首屏轨迹、成交量跳动与成交流均为模拟数据，仅用于展示信息架构与视觉，不构成任何实盘行情或投资建议。</p>
+        </details>
+        <details class="faq-item">
+          <summary>如何从聚合页进入单个事件？</summary>
+          <p class="faq-a">点击事件卡片即可进入示例详情页（当前 Demo 统一跳转至「2026 MLB 世界大赛冠军」详情布局）。真实产品中可映射为独立事件路由。</p>
+        </details>
+      </div>
+    </section>
+
+    <p class="footer-legal">
+      演示站免责声明：期货与衍生品交易存在显著风险，并不适合所有投资者。事件合约由持牌主体在合规框架内提供；文中合约名称仅能视为描述性引用，并不代表与被引用方的赞助或背书关系。
+    </p>
+  </div>
+
+  <script>
+    const DETAIL_HREF = "index.html";
+
+    const HUB_HERO = [
+      {
+        href: DETAIL_HREF,
+        tag: "体育 · MLB",
+        title: "2026 MLB 世界大赛冠军",
+        schedule: "滚动交易 · 多队并列",
+        colors: ["#a78bfa", "#60a5fa"],
+        volume: 8018857,
+        pairs: [
+          { name: "纽约大都会", odds: 0.38 },
+          { name: "洛杉矶道奇", odds: 0.29 },
+        ],
+      },
+      {
+        href: DETAIL_HREF,
+        tag: "政治 · 参议院",
+        title: "德州共和党参议员提名",
+        schedule: "2026 周期 · 高关注",
+        colors: ["#f472b6", "#fbbf24"],
+        volume: 3417468,
+        pairs: [
+          { name: "候选人 Ken P.", odds: 0.6 },
+          { name: "挑战者组合", odds: 0.34 },
+        ],
+      },
+      {
+        href: DETAIL_HREF,
+        tag: "Crypto · BTC",
+        title: "Bitcoin 何时触及 $150k",
+        schedule: "多日期合约并存",
+        colors: ["#22d3ee", "#34d399"],
+        volume: 11587083,
+        pairs: [
+          { name: "2026 上半年内", odds: 0.25 },
+          { name: "2026 下半年", odds: 0.42 },
+        ],
+      },
+    ];
+
+    const SPARK_LEN = 72;
+    const heroSparkState = [];
+
+    function fmtMoney(n) {
+      return (
+        "$" +
+        n.toLocaleString("en-US", { maximumFractionDigits: 0 })
+      );
+    }
+
+    function buildSparkHistory(start0, start1) {
+      const a0 = [];
+      const a1 = [];
+      let v0 = start0;
+      let v1 = start1;
+      for (let i = SPARK_LEN - 1; i >= 0; i--) {
+        a0.unshift(Math.max(0.03, Math.min(0.97, v0)));
+        a1.unshift(Math.max(0.03, Math.min(0.97, v1)));
+        let d0 = (Math.random() - 0.5) * 0.05;
+        if (Math.random() < 0.11) d0 += Math.sign(Math.random() - 0.5) * (0.08 + Math.random() * 0.09);
+        const d1 = -d0 * 0.82 + (Math.random() - 0.5) * 0.038;
+        v0 = Math.max(0.03, Math.min(0.97, v0 + d0));
+        v1 = Math.max(0.03, Math.min(0.97, v1 + d1));
+      }
+      return [a0, a1];
+    }
+
+    let heroSlideIdx = 0;
+    let heroPhysicalIdx = 1;
+
+    function heroLogicalFromPhysical(p) {
+      const n = HUB_HERO.length;
+      if (p === 0) return n - 1;
+      if (p === n + 1) return 0;
+      return p - 1;
+    }
+
+    function applyHeroTrackTransform(instant) {
+      const track = document.getElementById("heroTrack");
+      if (!track) return;
+      track.classList.toggle("hero-carousel-track--instant", !!instant);
+      track.style.transform = `translateX(-${heroPhysicalIdx * 100}%)`;
+      if (instant) {
+        void track.offsetWidth;
+        track.classList.remove("hero-carousel-track--instant");
+      }
+    }
+
+    function syncHeroDots() {
+      heroSlideIdx = heroLogicalFromPhysical(heroPhysicalIdx);
+      const dots = document.getElementById("heroDots");
+      if (dots) {
+        dots.querySelectorAll(".hero-dot").forEach((d, j) => {
+          d.setAttribute("aria-current", j === heroSlideIdx ? "true" : "false");
+        });
+      }
+      document.querySelectorAll(".hero-inline-nav-count").forEach((el) => {
+        el.textContent = `${heroSlideIdx + 1} / ${HUB_HERO.length}`;
+      });
+    }
+
+    function scrollHeroBubblesToEnd() {
+      const track = document.getElementById("heroTrack");
+      if (!track || !track.children[heroPhysicalIdx]) return;
+      const list = track.children[heroPhysicalIdx].querySelector(".hero-bubbles-list");
+      if (list) list.scrollTop = list.scrollHeight - list.clientHeight;
+    }
+
+    function goHeroSlideLogical(idx) {
+      const n = HUB_HERO.length;
+      const i = ((idx % n) + n) % n;
+      heroPhysicalIdx = i + 1;
+      applyHeroTrackTransform(false);
+      syncHeroDots();
+      requestAnimationFrame(scrollHeroBubblesToEnd);
+    }
+
+    function goHeroPhysicalStep(delta) {
+      const n = HUB_HERO.length;
+      heroPhysicalIdx += delta;
+      if (heroPhysicalIdx < 0) heroPhysicalIdx = 0;
+      if (heroPhysicalIdx > n + 1) heroPhysicalIdx = n + 1;
+      applyHeroTrackTransform(false);
+      syncHeroDots();
+      requestAnimationFrame(scrollHeroBubblesToEnd);
+    }
+
+    function onHeroTrackTransitionEnd(e) {
+      const track = document.getElementById("heroTrack");
+      if (!track || e.target !== track || e.propertyName !== "transform") return;
+      const n = HUB_HERO.length;
+      if (heroPhysicalIdx === n + 1) {
+        heroPhysicalIdx = 1;
+        applyHeroTrackTransform(true);
+        syncHeroDots();
+      } else if (heroPhysicalIdx === 0) {
+        heroPhysicalIdx = n;
+        applyHeroTrackTransform(true);
+        syncHeroDots();
+      }
+    }
+
+    function heroSlideTemplate(h, hi, isClone) {
+      if (!isClone) {
+        const [s0, s1] = buildSparkHistory(h.pairs[0].odds, h.pairs[1].odds);
+        h.pairs[0].odds = s0[s0.length - 1];
+        h.pairs[1].odds = s1[s1.length - 1];
+        heroSparkState.push({ histories: [s0, s1], volume: h.volume, dvol: 0 });
+      }
+      const lean0 = h.pairs[0].odds >= h.pairs[1].odds ? "yes" : "no";
+      const lean1 = h.pairs[1].odds > h.pairs[0].odds ? "yes" : "no";
+      const initDvol = (Math.random() * 600 + 120) | 0;
+      const navTotal = HUB_HERO.length;
+      return `
+<div class="hero-slide" data-hero="${hi}">
+  <div class="hero-slide-main" data-hero="${hi}">
+    <div class="hero-lead">
+      <div class="hero-lead-main">
+        <div class="hero-card-tag"><span class="live-dot" aria-hidden="true"></span> ${h.tag}</div>
+        <div class="hero-title-row">
+          <a class="hero-title-link" href="${h.href}"><h2 class="hero-event-title">${h.title}</h2></a>
+          <div class="hero-inline-nav" role="group" aria-label="热门事件切换">
+            <button type="button" class="hero-inline-nav-btn" data-hero-dir="-1" aria-label="上一则热门事件">‹</button>
+            <span class="hero-inline-nav-count" aria-live="polite">1 / ${navTotal}</span>
+            <button type="button" class="hero-inline-nav-btn" data-hero-dir="1" aria-label="下一则热门事件">›</button>
+          </div>
+        </div>
+        <div class="hero-card-meta"><span>${h.schedule}</span> · <strong>实时赔率 · 成交热度演示</strong></div>
+      </div>
+      <div class="hero-lead-stat">
+        <div class="hero-vol">
+          <div>
+            <div class="lbl">事件总成交量（示意）</div>
+            <div class="num" data-vol-display="${hi}">${fmtMoney(h.volume)}</div>
+          </div>
+          <div>
+            <div class="lbl">本秒增量</div>
+            <div class="dvol" data-dvol="${hi}">+${initDvol}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="hero-chart-row">
+      <a class="hero-spark-wrap" href="${h.href}">
+        <span class="spark-label">YES 隐含概率 % · 成交量前二合约</span>
+        <canvas class="hero-spark" width="400" height="236" aria-hidden="true"></canvas>
+      </a>
+      <div class="hero-bubbles-strip">
+        <h4>逐笔成交</h4>
+        <div class="hero-bubbles-list" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="hero-foot-compact">
+      <div class="hero-top-title">交易量最高的两个合约</div>
+      <div class="hero-duel hero-duel--compact">
+        <div class="hero-outcome">
+          <div class="hero-outcome-head">
+            <span class="hero-outcome-name">${h.pairs[0].name}</span>
+            <span class="hero-outcome-pct" data-pct="${hi}-0">${(h.pairs[0].odds * 100).toFixed(1)}%</span>
+          </div>
+          <div class="hero-meter"><i style="width:${h.pairs[0].odds * 100}%"></i></div>
+          <div class="hero-actions">
+            <span class="hero-pill yes">买 Yes ${(h.pairs[0].odds * 100).toFixed(0)}¢</span>
+            <span class="hero-pill no">买 No ${((1 - h.pairs[0].odds) * 100).toFixed(0)}¢</span>
+            <span class="hero-pill ${lean0 === "yes" ? "yes" : "no"}">预测方向 · 主流 ${lean0 === "yes" ? "Yes" : "No"}</span>
+          </div>
+        </div>
+        <div class="hero-outcome">
+          <div class="hero-outcome-head">
+            <span class="hero-outcome-name">${h.pairs[1].name}</span>
+            <span class="hero-outcome-pct" data-pct="${hi}-1">${(h.pairs[1].odds * 100).toFixed(1)}%</span>
+          </div>
+          <div class="hero-meter"><i style="width:${h.pairs[1].odds * 100}%"></i></div>
+          <div class="hero-actions">
+            <span class="hero-pill yes">买 Yes ${(h.pairs[1].odds * 100).toFixed(0)}¢</span>
+            <span class="hero-pill no">买 No ${((1 - h.pairs[1].odds) * 100).toFixed(0)}¢</span>
+            <span class="hero-pill ${lean1 === "yes" ? "yes" : "no"}">预测方向 · 主流 ${lean1 === "yes" ? "Yes" : "No"}</span>
+          </div>
+        </div>
+      </div>
+      <a class="hero-cta" href="${h.href}">打开事件详情 →</a>
+    </div>
+  </div>
+</div>`;
+    }
+
+    function onHeroTrackClick(e) {
+      const btn = e.target.closest("[data-hero-dir]");
+      if (!btn || !e.currentTarget.contains(btn)) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const d = parseInt(btn.getAttribute("data-hero-dir"), 10);
+      if (d === -1) goHeroPhysicalStep(-1);
+      else if (d === 1) goHeroPhysicalStep(1);
+    }
+
+    function renderHeroCarousel() {
+      const track = document.getElementById("heroTrack");
+      const dots = document.getElementById("heroDots");
+      if (!track || !dots) return;
+      heroSparkState.length = 0;
+      const n = HUB_HERO.length;
+      const reals = HUB_HERO.map((h, hi) => heroSlideTemplate(h, hi, false));
+      const head = heroSlideTemplate(HUB_HERO[n - 1], n - 1, true);
+      const tail = heroSlideTemplate(HUB_HERO[0], 0, true);
+      track.innerHTML = head + reals.join("") + tail;
+      track.removeEventListener("transitionend", onHeroTrackTransitionEnd);
+      track.addEventListener("transitionend", onHeroTrackTransitionEnd);
+
+      heroPhysicalIdx = 1;
+      syncHeroDots();
+      track.classList.add("hero-carousel-track--instant");
+      track.style.transform = `translateX(-${heroPhysicalIdx * 100}%)`;
+      void track.offsetWidth;
+      track.classList.remove("hero-carousel-track--instant");
+
+      dots.innerHTML = HUB_HERO.map(
+        (_, i) =>
+          `<button type="button" class="hero-dot" role="tab" aria-label="热门事件 ${i + 1} / ${HUB_HERO.length}" aria-current="${i === 0 ? "true" : "false"}" data-dot="${i}"></button>`
+      ).join("");
+      dots.querySelectorAll(".hero-dot").forEach((btn) => {
+        btn.addEventListener("click", () => goHeroSlideLogical(parseInt(btn.getAttribute("data-dot"), 10)));
+      });
+      if (!track.dataset.heroNavDelegated) {
+        track.dataset.heroNavDelegated = "1";
+        track.addEventListener("click", onHeroTrackClick);
+      }
+      bindHeroSparkInteractions();
+      heroSparkPointer = null;
+      redrawAllHeroSparks();
+    }
+
+    function pushHeroBubble(slideIdxOpt) {
+      const si = slideIdxOpt !== undefined ? slideIdxOpt : heroSlideIdx;
+      const lists = document.querySelectorAll(`.hero-slide[data-hero="${si}"] .hero-bubbles-list`);
+      if (!lists.length) return;
+      const h = HUB_HERO[si];
+      const yes = Math.random() > 0.4;
+      const pair = h.pairs[(Math.random() * 2) | 0];
+      const amt = ((Math.random() * 12000 + 180) / 1000).toFixed(2);
+      lists.forEach((list) => {
+        const div = document.createElement("div");
+        div.className = "hero-bubble " + (yes ? "buy-yes" : "buy-no");
+        div.innerHTML =
+          "<span>" + pair.name + " · " + (yes ? "Yes" : "No") + "</span><span class=\"hero-bubble-amt\">$" + amt + "k</span>";
+        list.appendChild(div);
+        while (list.children.length > 46) list.removeChild(list.firstChild);
+      });
+      document.querySelectorAll(`.hero-slide[data-hero="${si}"] .hero-bubbles-list`).forEach((list) => {
+        list.scrollTop = list.scrollHeight - list.clientHeight;
+      });
+    }
+
+    function tickHeroBubblesAutoScroll() {
+      const track = document.getElementById("heroTrack");
+      if (!track || !track.children[heroPhysicalIdx]) return;
+      const list = track.children[heroPhysicalIdx].querySelector(".hero-bubbles-list");
+      if (!list) return;
+      if (list.scrollHeight <= list.clientHeight + 2) return;
+      list.scrollTop += 7;
+      const max = list.scrollHeight - list.clientHeight;
+      if (list.scrollTop > max) list.scrollTop = max;
+    }
+
+    let heroSparkPointer = null;
+
+    function heroSparkAxisDates(pointCount) {
+      const out = [];
+      const nTick = 4;
+      const now = new Date();
+      for (let k = 0; k < nTick; k++) {
+        const i = Math.round((k * (pointCount - 1)) / (nTick - 1));
+        const d = new Date(now);
+        d.setDate(d.getDate() - (pointCount - 1 - i));
+        const t = `${d.getMonth() + 1}月${d.getDate()}日`;
+        out.push({ i, t });
+      }
+      return out;
+    }
+
+    function canvasRoundRect(ctx, x, y, w, h, r) {
+      const rr = Math.min(r, w / 2, h / 2);
+      ctx.beginPath();
+      ctx.moveTo(x + rr, y);
+      ctx.arcTo(x + w, y, x + w, y + h, rr);
+      ctx.arcTo(x + w, y + h, x, y + h, rr);
+      ctx.arcTo(x, y + h, x, y, rr);
+      ctx.arcTo(x, y, x + w, y, rr);
+      ctx.closePath();
+    }
+
+    function drawHeroSpark(canvas, hi, colors, hoverIdxOpt) {
+      if (!canvas) return;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const rect = canvas.getBoundingClientRect();
+      const w = rect.width || 400;
+      const h = rect.height || 236;
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      const ctx = canvas.getContext("2d");
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, w, h);
+      const st = heroSparkState[hi];
+      if (!st) return;
+      const pad = { l: 12, r: 52, t: 30, b: 28 };
+      const cw = Math.max(40, w - pad.l - pad.r);
+      const ch = Math.max(40, h - pad.t - pad.b);
+      const len = st.histories[0].length;
+      const hoverIdx =
+        hoverIdxOpt !== undefined && hoverIdxOpt !== null
+          ? Math.max(0, Math.min(len - 1, hoverIdxOpt))
+          : null;
+
+      const gridPcts = [0, 0.25, 0.5, 0.75, 1];
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.06)";
+      ctx.lineWidth = 1;
+      ctx.setLineDash([3, 4]);
+      gridPcts.forEach((pct) => {
+        const gy = pad.t + ch - pct * ch;
+        ctx.beginPath();
+        ctx.moveTo(pad.l, gy);
+        ctx.lineTo(pad.l + cw, gy);
+        ctx.stroke();
+      });
+      ctx.setLineDash([]);
+
+      ctx.fillStyle = "#7a7a8c";
+      ctx.font = "600 10px DM Sans, system-ui, sans-serif";
+      ctx.textAlign = "right";
+      ctx.textBaseline = "middle";
+      gridPcts.forEach((pct) => {
+        const gy = pad.t + ch - pct * ch;
+        ctx.fillText(`${Math.round(pct * 100)}%`, w - 6, gy);
+      });
+
+      const xTicks = heroSparkAxisDates(len);
+      ctx.fillStyle = "#6b7280";
+      ctx.font = "600 9px DM Sans, system-ui, sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "top";
+      xTicks.forEach(({ i, t }) => {
+        const x = pad.l + (cw * i) / (len - 1);
+        ctx.fillText(t, x, h - pad.b + 6);
+      });
+
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.09)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(pad.l, pad.t + ch);
+      ctx.lineTo(pad.l + cw, pad.t + ch);
+      ctx.stroke();
+
+      const drawSeriesSegment = (arr, li, i0, i1, alpha, lineW) => {
+        ctx.beginPath();
+        for (let i = i0; i <= i1; i++) {
+          const x = pad.l + (cw * i) / (len - 1);
+          const yn = Math.max(0, Math.min(1, arr[i]));
+          const y = pad.t + ch - yn * ch;
+          if (i === i0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.strokeStyle = colors[li];
+        ctx.lineWidth = lineW;
+        ctx.globalAlpha = alpha;
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      };
+
+      st.histories.forEach((arr, li) => {
+        if (hoverIdx != null && hoverIdx < len - 1) {
+          drawSeriesSegment(arr, li, hoverIdx, len - 1, li === 0 ? 0.38 : 0.28, li === 0 ? 2 : 1.65);
+          drawSeriesSegment(arr, li, 0, hoverIdx, li === 0 ? 1 : 0.72, li === 0 ? 2.35 : 1.9);
+        } else {
+          drawSeriesSegment(arr, li, 0, len - 1, li === 0 ? 1 : 0.68, li === 0 ? 2.35 : 1.9);
+        }
+      });
+
+      if (hoverIdx != null) {
+        const hx = pad.l + (cw * hoverIdx) / (len - 1);
+        ctx.strokeStyle = "rgba(180, 180, 200, 0.55)";
+        ctx.lineWidth = 1;
+        ctx.setLineDash([4, 3]);
+        ctx.beginPath();
+        ctx.moveTo(hx, pad.t);
+        ctx.lineTo(hx, pad.t + ch);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        const hub = HUB_HERO[hi];
+        const xDate = new Date();
+        xDate.setDate(xDate.getDate() - (len - 1 - hoverIdx));
+        const timeStr = `${xDate.getMonth() + 1}/${xDate.getDate()} · ${String(xDate.getHours()).padStart(2, "0")}:${String(xDate.getMinutes()).padStart(2, "0")}`;
+        ctx.font = "600 10px DM Sans, system-ui, sans-serif";
+        ctx.fillStyle = "#a1a1b5";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "bottom";
+        ctx.fillText(timeStr, hx, pad.t - 4);
+
+        const pills = [];
+        st.histories.forEach((arr, li) => {
+          const v = arr[hoverIdx];
+          const prev = hoverIdx > 0 ? arr[hoverIdx - 1] : v;
+          const up = v >= prev - 0.0001;
+          const cents = Math.round(v * 100);
+          const pctStr = (v * 100).toFixed(1) + "%";
+          const shortName = (hub.pairs[li].name || "").slice(0, 8);
+          pills.push({
+            color: colors[li],
+            arrow: up ? "↑" : "↓",
+            main: shortName + " " + cents + "¢",
+            sub: pctStr,
+          });
+        });
+
+        const pillH = 22;
+        const pillGap = 5;
+        const padX = 8;
+        let maxTw = 0;
+        ctx.font = "600 11px DM Sans, system-ui, sans-serif";
+        pills.forEach((p) => {
+          const t = `${p.arrow} ${p.main}  ${p.sub}`;
+          maxTw = Math.max(maxTw, ctx.measureText(t).width);
+        });
+        const pillW = maxTw + padX * 2;
+        let px = hx + 10;
+        if (px + pillW > pad.l + cw - 2) px = hx - pillW - 10;
+        let py = pad.t + 14;
+        pills.forEach((p) => {
+          const text = `${p.arrow} ${p.main}  ${p.sub}`;
+          canvasRoundRect(ctx, px, py, pillW, pillH, 6);
+          ctx.fillStyle = p.color;
+          ctx.globalAlpha = 0.92;
+          ctx.fill();
+          ctx.globalAlpha = 1;
+          ctx.strokeStyle = "rgba(255,255,255,0.35)";
+          ctx.lineWidth = 1;
+          canvasRoundRect(ctx, px, py, pillW, pillH, 6);
+          ctx.stroke();
+          ctx.fillStyle = "#ffffff";
+          ctx.textAlign = "left";
+          ctx.textBaseline = "middle";
+          ctx.fillText(text, px + padX, py + pillH / 2);
+          py += pillH + pillGap;
+        });
+
+        st.histories.forEach((arr, li) => {
+          const v = arr[hoverIdx];
+          const yn = Math.max(0, Math.min(1, v));
+          const y = pad.t + ch - yn * ch;
+          ctx.fillStyle = colors[li];
+          ctx.beginPath();
+          ctx.arc(hx, y, li === 0 ? 5 : 4.2, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = "rgba(0,0,0,0.35)";
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        });
+      }
+    }
+
+    function redrawAllHeroSparks() {
+      HUB_HERO.forEach((h, hi) => {
+        document.querySelectorAll(`.hero-slide[data-hero="${hi}"] .hero-spark`).forEach((canv) => {
+          const hv =
+            heroSparkPointer && heroSparkPointer.canvas === canv ? heroSparkPointer.idx : null;
+          drawHeroSpark(canv, hi, h.colors, hv);
+        });
+      });
+    }
+
+    function bindHeroSparkInteractions() {
+      const track = document.getElementById("heroTrack");
+      if (!track || track.dataset.sparkBound) return;
+      track.dataset.sparkBound = "1";
+      track.addEventListener("mousemove", (e) => {
+        const canvas = e.target.closest(".hero-spark");
+        if (!canvas || !track.contains(canvas)) return;
+        const slide = canvas.closest(".hero-slide");
+        if (!slide) return;
+        const hi = parseInt(slide.getAttribute("data-hero"), 10);
+        if (!Number.isFinite(hi) || !HUB_HERO[hi]) return;
+        const h = HUB_HERO[hi];
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const w = rect.width || 400;
+        const padL = 12;
+        const padR = 52;
+        const cw = Math.max(40, w - padL - padR);
+        const len = heroSparkState[hi] ? heroSparkState[hi].histories[0].length : SPARK_LEN;
+        let idx = Math.round(((x - padL) / cw) * (len - 1));
+        idx = Math.max(0, Math.min(len - 1, idx));
+        heroSparkPointer = { canvas, idx, hi };
+        redrawAllHeroSparks();
+      });
+      track.addEventListener("mouseleave", (e) => {
+        if (e.relatedTarget && track.contains(e.relatedTarget)) return;
+        heroSparkPointer = null;
+        redrawAllHeroSparks();
+      });
+      track.addEventListener("click", (e) => {
+        if (e.target.classList && e.target.classList.contains("hero-spark")) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+      });
+    }
+
+    function tickHero() {
+      HUB_HERO.forEach((h, hi) => {
+        const st = heroSparkState[hi];
+        if (!st) return;
+        const arr0 = st.histories[0];
+        const arr1 = st.histories[1];
+        const last0 = arr0[arr0.length - 1];
+        const last1 = arr1[arr1.length - 1];
+        let d0 = (Math.random() - 0.5) * 0.048;
+        if (Math.random() < 0.09) d0 += Math.sign(Math.random() - 0.5) * (0.055 + Math.random() * 0.06);
+        const d1 = -d0 * 0.78 + (Math.random() - 0.5) * 0.034;
+        const n0 = Math.max(0.03, Math.min(0.97, last0 + d0));
+        const n1 = Math.max(0.03, Math.min(0.97, last1 + d1));
+        arr0.push(n0);
+        arr0.shift();
+        arr1.push(n1);
+        arr1.shift();
+        h.pairs[0].odds = arr0[arr0.length - 1];
+        h.pairs[1].odds = arr1[arr1.length - 1];
+        const bump = (Math.random() * 900 + 150) | 0;
+        st.volume += bump;
+        st.dvol = bump;
+        document.querySelectorAll(`.hero-slide-main[data-hero="${hi}"]`).forEach((card) => {
+          const nv = card.querySelector(`[data-vol-display="${hi}"]`);
+          if (nv) {
+            nv.textContent = fmtMoney(st.volume);
+            nv.classList.remove("tick");
+            void nv.offsetWidth;
+            nv.classList.add("tick");
+          }
+          const dv = card.querySelector(`[data-dvol="${hi}"]`);
+          if (dv) dv.textContent = "+" + String(bump);
+
+          const p0 = card.querySelector(`[data-pct="${hi}-0"]`);
+          const p1 = card.querySelector(`[data-pct="${hi}-1"]`);
+          if (p0) p0.textContent = (h.pairs[0].odds * 100).toFixed(1) + "%";
+          if (p1) p1.textContent = (h.pairs[1].odds * 100).toFixed(1) + "%";
+          const meters = card.querySelectorAll(".hero-meter > i");
+          if (meters[0]) meters[0].style.width = h.pairs[0].odds * 100 + "%";
+          if (meters[1]) meters[1].style.width = h.pairs[1].odds * 100 + "%";
+
+          const pills = card.querySelectorAll(".hero-actions .hero-pill");
+          const yes0 = `买 Yes ${(h.pairs[0].odds * 100).toFixed(0)}¢`;
+          const no0 = `买 No ${((1 - h.pairs[0].odds) * 100).toFixed(0)}¢`;
+          const yes1 = `买 Yes ${(h.pairs[1].odds * 100).toFixed(0)}¢`;
+          const no1 = `买 No ${((1 - h.pairs[1].odds) * 100).toFixed(0)}¢`;
+          if (pills[0]) pills[0].textContent = yes0;
+          if (pills[1]) pills[1].textContent = no0;
+          if (pills[2]) {
+            const lean0 = h.pairs[0].odds >= h.pairs[1].odds ? "yes" : "no";
+            pills[2].className = "hero-pill " + (lean0 === "yes" ? "yes" : "no");
+            pills[2].textContent = `预测方向 · 主流 ${lean0 === "yes" ? "Yes" : "No"}`;
+          }
+          if (pills[3]) pills[3].textContent = yes1;
+          if (pills[4]) pills[4].textContent = no1;
+          if (pills[5]) {
+            const lean1 = h.pairs[1].odds > h.pairs[0].odds ? "yes" : "no";
+            pills[5].className = "hero-pill " + (lean1 === "yes" ? "yes" : "no");
+            pills[5].textContent = `预测方向 · 主流 ${lean1 === "yes" ? "Yes" : "No"}`;
+          }
+        });
+      });
+      redrawAllHeroSparks();
+    }
+
+    const FEED_POOL = [
+      { ev: "MLB 世界大赛", n: "纽约大都会" },
+      { ev: "MLB 世界大赛", n: "洛杉矶道奇" },
+      { ev: "参议员提名", n: "Ken P." },
+      { ev: "BTC $150k", n: "上半年窗口" },
+      { ev: "NBA 西区", n: "雷霆" },
+      { ev: "联储决议", n: "维持利率" },
+    ];
+
+    function fmtTime() {
+      const d = new Date();
+      return (
+        String(d.getHours()).padStart(2, "0") +
+        ":" +
+        String(d.getMinutes()).padStart(2, "0") +
+        ":" +
+        String(d.getSeconds()).padStart(2, "0")
+      );
+    }
+
+    function oneTradeRow(seed) {
+      const buy = (Math.sin(seed * 0.7) * 10000 + Math.random() * 10000) % 1 > 0.42;
+      const side = buy ? "yes" : "no";
+      const pool = FEED_POOL[(Math.floor(seed * 13) + Math.floor(Math.random() * 3)) % FEED_POOL.length];
+      const k = (Math.random() * 8.2 + 0.35).toFixed(2);
+      const cls = buy ? "buy" : "sell";
+      return (
+        `<div class="trade-row ${cls}">` +
+        `<span class="trade-side ${side}">${buy ? "YES" : "NO"}</span>` +
+        `<span class="trade-detail"><strong>${pool.n}</strong> · ${pool.ev}</span>` +
+        `<span class="trade-amt">$${k}K</span>` +
+        `<span class="trade-time">${fmtTime()}</span>` +
+        `</div>`
+      );
+    }
+
+    function fillHotTrack(el, count, offset) {
+      let html = "";
+      for (let i = 0; i < count; i++) html += oneTradeRow(offset + i * 0.31);
+      el.innerHTML = html + html;
+    }
+
+    function setupHotTrades() {
+      const a = document.getElementById("hotTrackA");
+      const b = document.getElementById("hotTrackB");
+      const c = document.getElementById("hotTrackC");
+      const layer = document.getElementById("hotToastLayer");
+      if (!a || !b) return;
+      fillHotTrack(a, 40, 0);
+      fillHotTrack(b, 44, 77);
+      if (c) fillHotTrack(c, 38, 150);
+      function pushToast() {
+        if (!layer) return;
+        const buy = Math.random() > 0.35;
+        const pool = FEED_POOL[(Math.random() * FEED_POOL.length) | 0];
+        const k = (Math.random() * 9 + 0.18).toFixed(2);
+        const mask = "***" + String(Math.floor(Math.random() * 900 + 100));
+        const t = document.createElement("div");
+        t.className = "hot-toast" + (buy ? "" : " sell-toast");
+        t.innerHTML =
+          (buy ? "🔥 火热" : "⚡ 平仓") +
+          " · 用户 <strong>" +
+          mask +
+          "</strong> " +
+          (buy ? "买入" : "卖出") +
+          " <strong>" +
+          pool.n +
+          "</strong> " +
+          (buy ? "YES" : "NO") +
+          ' <span style="color:#fbbf24">$' +
+          k +
+          "K</span>";
+        layer.appendChild(t);
+        while (layer.children.length > 7) layer.removeChild(layer.firstChild);
+        setTimeout(() => {
+          if (t.parentNode === layer) layer.removeChild(t);
+        }, 2800);
+      }
+      pushToast();
+      setInterval(() => pushToast(), 900 + Math.random() * 700);
+    }
+
+    function aggHot24Row(e, i) {
+      return (
+        `<a class="hot24-row" href="${DETAIL_HREF}">` +
+        `<span class="hot24-rank">${i + 1}</span>` +
+        `<span class="hot24-name">${e.title}</span>` +
+        `<span class="hot24-vol">${e.vol}</span>` +
+        `</a>`
+      );
+    }
+
+    const AGG_POLITICS = [
+      { pill: "政治 · 提名", title: "2026 德州共和党参议员提名", vol: "$3.42M", topName: "Ken P.", yesPct: "60¢", lean: "yes" },
+      { pill: "政治 · 州务", title: "中期选举前会否重新划分选区（德州）", vol: "$209k", topName: "Yes 区块", yesPct: "97¢", lean: "yes" },
+      { pill: "政治 · 行政", title: "2026 谁将离开现政府阁员名单", vol: "$1.13M", topName: "国务卿人选 A", yesPct: "82¢", lean: "yes" },
+      { pill: "政治 · 外交", title: "格陵兰相关动向时间窗（示意）", vol: "$1.41M", topName: "Before 2029", yesPct: "24¢", lean: "no" },
+      { pill: "政治 · 补贴", title: "关税相关刺激支票会否落地", vol: "$1.12M", topName: "Before 2027", yesPct: "17¢", lean: "no" },
+      { pill: "政治 · 参议院", title: "德州两党对决组合线（示意）", vol: "$1.31M", topName: "对决 A", yesPct: "58¢", lean: "yes" },
+      { pill: "政治 · 民调", title: "大选出口民调领先者（示意）", vol: "$22.0M", topName: "候选人 A", yesPct: "51¢", lean: "yes" },
+    ];
+    const AGG_FINANCE = [
+      { pill: "金融 · 联储", title: "2026 年 4 月 FOMC 决议路径", vol: "$5.84M", topName: "维持利率", yesPct: "94¢", lean: "yes" },
+      { pill: "金融 · gas", title: "美国汽油均价 2026 年 3 月", vol: "$1.73M", topName: "高于 $2.90", yesPct: "99¢", lean: "yes" },
+      { pill: "金融 · 指数", title: "标普 500 年终收盘区间", vol: "$8.9M", topName: "> 6000", yesPct: "12¢", lean: "no" },
+      { pill: "金融 · 日元", title: "美元兑日元 即期月线关口（示意）", vol: "$33.8k", topName: "Over 158", yesPct: "98¢", lean: "yes" },
+      { pill: "金融 · 就业", title: "非农超预期与否（示意）", vol: "$508k", topName: "超预期 Yes", yesPct: "41¢", lean: "yes" },
+      { pill: "金融 · 贵金属", title: "黄金月末收盘高于 $4400（示意）", vol: "$58.6k", topName: "Over", yesPct: "67¢", lean: "yes" },
+      { pill: "金融 · 波动率", title: "VIX 年内高点区间（示意）", vol: "$312k", topName: ">35 Yes", yesPct: "28¢", lean: "no" },
+    ];
+    const AGG_SPORTS = [
+      { pill: "体育 · MLB", title: "2026 MLB 世界大赛冠军", vol: "$8.02M", topName: "纽约大都会", yesPct: "38¢", lean: "yes" },
+      { pill: "体育 · NBA", title: "NBA 2026 总冠军", vol: "$31.0M", topName: "俄克拉荷马雷霆", yesPct: "22¢", lean: "yes" },
+      { pill: "体育 · 拳击", title: "表演赛胜负（示意）", vol: "$184k", topName: "梅威瑟", yesPct: "75¢", lean: "no" },
+      { pill: "体育 · 冰上", title: "NHL 分区焦点战晋级（示意）", vol: "$32.3k", topName: "底特律", yesPct: "41¢", lean: "yes" },
+      { pill: "体育 · 网球", title: "ATP 迈阿密冠军线外卡（示意）", vol: "$572k", topName: "辛纳", yesPct: "82¢", lean: "yes" },
+      { pill: "体育 · 足球", title: "PFA 年度最佳球员", vol: "$194k", topName: "赖斯", yesPct: "57¢", lean: "yes" },
+      { pill: "体育 · 综合", title: "大学篮球邀请赛晋级（示意）", vol: "$1.36M", topName: "圣约翰", yesPct: "29¢", lean: "yes" },
+    ];
+
+    const TOPIC_NBA = [
+      { z: "西区半决赛", t: "湖人对阵掘金晋级线", vol: "$3.2M", top: "掘金 Yes 61¢", lean: "yes" },
+      { z: "总冠军", t: "雷霆夺冠概率 vs 东部龙头", vol: "$31.0M", top: "雷霆 Yes 22¢", lean: "yes" },
+      { z: "MVP 观测", t: "常规赛 MVP 得主市场", vol: "$890k", top: "约基奇 Yes 34¢", lean: "yes" },
+      { z: "季后赛", t: "凯尔特人主场抢七（示意）", vol: "$1.05M", top: "主场 Yes 54¢", lean: "yes" },
+      { z: "伤病线", t: "球星复出时间窗对盘影响（示意）", vol: "$240k", top: "按时复出 No 38¢", lean: "no" },
+      { z: "新秀", t: "年度最佳新秀得主", vol: "$580k", top: "热门新秀 A Yes 47¢", lean: "yes" },
+      { z: "交易量", t: "东西部决赛对阵组合", vol: "$620k", top: "雷狼 Yes 19¢", lean: "yes" },
+      { z: "短期", t: "今周日均得分王（示意）", vol: "$112k", top: "球星 B Yes 52¢", lean: "yes" },
+    ];
+    const TOPIC_MLB = [
+      { z: "联盟冠军", t: "2026 美联冠军归属", vol: "$6.2M", top: "洋基 Yes 18¢", lean: "yes" },
+      { z: "联盟冠军", t: "2026 国联冠军归属", vol: "$4.8M", top: "道奇 Yes 24¢", lean: "yes" },
+      { z: "跨联盟", t: "世界大赛碰面组合（示意）", vol: "$1.1M", top: "道奇 vs 洋基", lean: "yes" },
+      { z: "先发投手", t: "赛季胜投王（示意）", vol: "$420k", top: "投手 X Yes 21¢", lean: "yes" },
+      { z: "本垒打", t: "本垒打王大都会队内（示意）", vol: "$180k", top: "球星 Y Yes 63¢", lean: "yes" },
+      { z: "交易截止", t: "七月交易大限明星去向（示意）", vol: "$750k", top: "留队 Yes 40¢", lean: "yes" },
+      { z: "外卡", t: "外卡席位数预测（示意）", vol: "$260k", top: "两队 Yes 55¢", lean: "yes" },
+      { z: "赛制", t: "新轮换规则下平均局时（示意）", vol: "$95k", top: "<3h No 44¢", lean: "no" },
+    ];
+    const TOPIC_CRYPTO = [
+      { z: "价格阈值", t: "Bitcoin 触及 $150k 时间窗", vol: "$11.6M", top: "2026 下半年 42¢", lean: "yes" },
+      { z: "期权叙事", t: "BTC 年终是否站上 $200k", vol: "$1.24M", top: "Above $200k 6¢", lean: "no" },
+      { z: "链上事件", t: "以太坊升级相关里程碑（示意）", vol: "$420k", top: "按时完成 Yes 71¢", lean: "yes" },
+      { z: "质押", t: "ETH 质押队列退出时长（示意）", vol: "$210k", top: "<7 天 Yes 36¢", lean: "yes" },
+      { z: "ETF", t: "现货 ETF 周净申购（示意）", vol: "$1.8M", top: "净流入 Yes 72¢", lean: "yes" },
+      { z: "监管", t: "稳定币立法节点（示意）", vol: "$620k", top: "上半年 Yes 29¢", lean: "no" },
+      { z: "Layer2", t: "某日活地址均值（示意）", vol: "$340k", top: "Above Yes 58¢", lean: "yes" },
+      { z: "减半后", t: "矿工收入结构猜想（示意）", vol: "$280k", top: "费占优 No 51¢", lean: "no" },
+    ];
+
+    function topicCard(x) {
+      return `<a class="topic-card" href="${DETAIL_HREF}">
+        <div class="z">${x.z}</div>
+        <h3>${x.t}</h3>
+        <p class="row">专题成交量：<b>${x.vol}</b></p>
+        <p class="row">亮点合约：<b>${x.top}</b></p>
+        <p class="row">方向：<b>${x.lean === "yes" ? "主流 Yes" : "主流 No"}</b></p>
+      </a>`;
+    }
+
+    document.getElementById("gridPolitics").innerHTML = AGG_POLITICS.map(aggHot24Row).join("");
+    document.getElementById("gridFinance").innerHTML = AGG_FINANCE.map(aggHot24Row).join("");
+    document.getElementById("gridSports").innerHTML = AGG_SPORTS.map(aggHot24Row).join("");
+    document.getElementById("topicNba").innerHTML = TOPIC_NBA.map(topicCard).join("");
+    document.getElementById("topicMlb").innerHTML = TOPIC_MLB.map(topicCard).join("");
+    document.getElementById("topicCrypto").innerHTML = TOPIC_CRYPTO.map(topicCard).join("");
+
+    renderHeroCarousel();
+    setupHotTrades();
+    setInterval(tickHero, 900);
+    for (let hi = 0; hi < HUB_HERO.length; hi++) {
+      for (let i = 0; i < 20; i++) pushHeroBubble(hi);
+    }
+    scrollHeroBubblesToEnd();
+    setInterval(() => {
+      pushHeroBubble();
+      if (Math.random() > 0.38) setTimeout(() => pushHeroBubble(), 55);
+    }, 240);
+    setInterval(tickHeroBubblesAutoScroll, 26);
+    window.addEventListener("resize", () => {
+      redrawAllHeroSparks();
+    });
+  </script>
+</body>
+</html>
