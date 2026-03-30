@@ -1,0 +1,2068 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>事件合约详情 · Demo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #06060b;
+      --surface: #14141c;
+      --surface2: #1e1e2a;
+      --border: #2a2a3a;
+      --text: #f4f4f8;
+      --muted: #8a8a9a;
+      --green: #34d399;
+      --green-dim: rgba(52, 211, 153, 0.14);
+      --red: #f87171;
+      --red-dim: rgba(248, 113, 113, 0.12);
+      --accent: #60a5fa;
+      --heat: #fbbf24;
+      --gold: #fde68a;
+      --radius: 12px;
+      --font: "DM Sans", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      /* 标题：模块级接近 18–24px，卡片级 ≥16px，便于扫读与层级区分 */
+      --title-card: 16px;
+      --title-module: clamp(19px, 2.25vw, 24px);
+      --weight-title: 800;
+      --weight-card: 700;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      min-height: 100vh;
+      position: relative;
+      overflow-x: hidden;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: -20%;
+      background:
+        radial-gradient(ellipse 50% 40% at 18% 8%, rgba(37, 99, 235, 0.2), transparent 55%),
+        radial-gradient(ellipse 45% 35% at 88% 15%, rgba(16, 185, 129, 0.14), transparent 50%),
+        radial-gradient(ellipse 40% 45% at 50% 100%, rgba(245, 158, 11, 0.1), transparent 45%);
+      animation: ambient-drift 18s ease-in-out infinite alternate;
+      pointer-events: none;
+      z-index: 0;
+    }
+    @keyframes ambient-drift {
+      0% { transform: translate(0, 0) scale(1); opacity: 1; }
+      100% { transform: translate(2%, -1%) scale(1.04); opacity: 0.94; }
+    }
+    a { color: var(--accent); text-decoration: none; }
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 16px 16px 80px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* 区块主标题：页内独立模块（与侧栏卡片标题同级） */
+    .module-title {
+      font-size: var(--title-module);
+      font-weight: var(--weight-title);
+      line-height: 1.3;
+      margin: 0 0 14px;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      letter-spacing: -0.02em;
+    }
+    .module-title .badge-live { flex-shrink: 0; }
+    .module-title-meta {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      letter-spacing: 0.04em;
+    }
+
+    /* 顶部跑马灯 */
+    .hype-marquee-wrap {
+      margin-bottom: 18px;
+      border-radius: var(--radius);
+      overflow: hidden;
+      background: linear-gradient(90deg, rgba(239, 68, 68, 0.12), rgba(37, 99, 235, 0.16), rgba(16, 185, 129, 0.12));
+      border: 1px solid rgba(251, 191, 36, 0.28);
+      mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent);
+      -webkit-mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent);
+    }
+    .hype-marquee {
+      display: flex;
+      width: max-content;
+      animation: hype-scroll 24s linear infinite;
+      padding: 10px 0;
+    }
+    .hype-marquee:hover { animation-play-state: paused; }
+    @keyframes hype-scroll {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+    .hype-chunk {
+      flex-shrink: 0;
+      padding: 0 36px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--gold);
+      white-space: nowrap;
+      text-shadow: 0 0 22px rgba(251, 191, 36, 0.35);
+    }
+    .hype-chunk em { font-style: normal; color: #86efac; margin: 0 0.35em; }
+
+    .page-head { margin-bottom: 18px; }
+    .breadcrumb { font-size: 12px; color: var(--muted); margin-bottom: 8px; }
+    .breadcrumb span { color: var(--text); }
+    h1 {
+      font-size: clamp(26px, 4.2vw, 36px);
+      font-weight: 800;
+      margin-bottom: 6px;
+      line-height: 1.2;
+      text-shadow: 0 0 40px rgba(255, 255, 255, 0.06);
+      letter-spacing: -0.03em;
+    }
+    .sub { color: var(--muted); font-size: 14px; margin-bottom: 16px; }
+
+    .buzz-bar {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 14px;
+      align-items: center;
+      padding: 14px 18px;
+      background: rgba(0, 0, 0, 0.38);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+    }
+    @media (max-width: 720px) { .buzz-bar { grid-template-columns: 1fr; } }
+    .heat-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .heat-label {
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--heat);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .heat-label .fire { animation: fire-wobble 0.65s ease-in-out infinite alternate; display: inline-block; }
+    @keyframes fire-wobble {
+      from { transform: rotate(-6deg) scale(1); }
+      to { transform: rotate(6deg) scale(1.12); }
+    }
+    .heat-track {
+      flex: 1;
+      min-width: 140px;
+      height: 10px;
+      background: #1a1a24;
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1px solid #333;
+    }
+    .heat-fill {
+      height: 100%;
+      width: 94%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #f59e0b, #ef4444, #fbbf24);
+      background-size: 200% 100%;
+      animation: heat-flow 2s linear infinite, heat-pulse 1.8s ease-in-out infinite alternate;
+    }
+    @keyframes heat-flow {
+      0% { background-position: 0% 50%; }
+      100% { background-position: 200% 50%; }
+    }
+    @keyframes heat-pulse {
+      0% { width: 88%; filter: brightness(1); }
+      100% { width: 98%; filter: brightness(1.12); }
+    }
+    .crowd-stats { display: flex; flex-wrap: wrap; gap: 10px 16px; font-size: 12px; }
+    .crowd-stat {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      background: rgba(37, 99, 235, 0.12);
+      border-radius: 8px;
+      border: 1px solid rgba(59, 130, 246, 0.28);
+    }
+    .crowd-stat strong { color: var(--gold); font-variant-numeric: tabular-nums; }
+    .dot-live {
+      width: 6px; height: 6px;
+      background: #22c55e;
+      border-radius: 50%;
+      box-shadow: 0 0 10px #22c55e;
+      animation: live-blink 1s steps(2) infinite;
+    }
+    @keyframes live-blink { 50% { opacity: 0.35; } }
+
+    .grid-main {
+      display: grid;
+      grid-template-columns: 1fr min(340px, 100%);
+      gap: 22px;
+      align-items: start;
+    }
+    @media (max-width: 1024px) {
+      .grid-main { grid-template-columns: 1fr; }
+      .sidebar {
+        order: -1;
+        position: relative;
+        top: auto;
+        max-height: none;
+        overflow-y: visible;
+        padding-bottom: 0;
+        scrollbar-gutter: auto;
+      }
+    }
+
+    .card {
+      background: linear-gradient(165deg, #1e1e2a 0%, #14141c 45%, #16161f 100%);
+      border: 1px solid rgba(90, 90, 120, 0.35);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow:
+        0 0 0 1px rgba(16, 185, 129, 0.05),
+        0 24px 72px rgba(0, 0, 0, 0.5),
+        0 0 48px rgba(37, 99, 235, 0.07);
+      animation: module-glow 4.5s ease-in-out infinite alternate;
+    }
+    @keyframes module-glow {
+      0% { box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.05), 0 24px 72px rgba(0, 0, 0, 0.5), 0 0 40px rgba(37, 99, 235, 0.06); }
+      100% { box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.1), 0 24px 72px rgba(0, 0, 0, 0.5), 0 0 72px rgba(16, 185, 129, 0.1); }
+    }
+    .card-h {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+      background: linear-gradient(90deg, rgba(239, 68, 68, 0.06), rgba(37, 99, 235, 0.08), rgba(245, 158, 11, 0.05));
+    }
+    .card-h-meta {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+    }
+    .card-h-meta.heat { color: var(--heat); }
+    .card-h h2 {
+      font-size: var(--title-card);
+      font-weight: var(--weight-card);
+      margin: 0;
+      line-height: 1.35;
+      letter-spacing: -0.01em;
+    }
+    /* 与 .module-title 同级的卡片顶栏标题 */
+    .card-h--lg h2 {
+      font-size: var(--title-module);
+      font-weight: var(--weight-title);
+      letter-spacing: -0.02em;
+    }
+    .badge-live {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--green);
+      background: var(--green-dim);
+      padding: 4px 10px;
+      border-radius: 999px;
+      box-shadow: 0 0 16px rgba(52, 211, 153, 0.25);
+    }
+    .badge-live::before {
+      content: "";
+      width: 6px; height: 6px;
+      background: var(--green);
+      border-radius: 50%;
+      animation: pulse 1s ease infinite;
+    }
+    @keyframes pulse { 50% { opacity: 0.45; transform: scale(0.9); } }
+
+    .chart-axis-hint {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 600;
+      margin: -4px 16px 10px;
+      line-height: 1.4;
+    }
+
+    .chart-row {
+      display: grid;
+      grid-template-columns: 1fr 210px;
+      min-height: 280px;
+    }
+    @media (max-width: 768px) { .chart-row { grid-template-columns: 1fr; } }
+    #eventChart {
+      display: block;
+      width: 100%;
+      height: 280px;
+      cursor: crosshair;
+      background: linear-gradient(180deg, #08080e 0%, #12121a 100%);
+      box-shadow: inset 0 0 48px rgba(37, 99, 235, 0.06);
+    }
+    .chart-meta {
+      padding: 12px;
+      border-left: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      font-size: 12px;
+      background: rgba(0, 0, 0, 0.2);
+    }
+    @media (max-width: 768px) {
+      .chart-meta { border-left: 0; border-top: 1px solid var(--border); }
+    }
+    .meta-stat .label { color: var(--muted); }
+    .meta-stat .value {
+      font-size: 22px;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      color: var(--green);
+      text-shadow: 0 0 20px rgba(52, 211, 153, 0.35);
+    }
+    .trade-bubbles {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+      min-height: 120px;
+      border-radius: 10px;
+      background: #12121a;
+      border: 1px solid var(--border);
+    }
+    .trade-bubbles h3 {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      padding: 8px 10px;
+    }
+    .bubble-list { padding: 0 8px 8px; max-height: 140px; overflow: hidden; }
+    .bubble {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 8px;
+      margin-bottom: 4px;
+      border-radius: 8px;
+      font-size: 11px;
+      animation: slideIn 0.35s ease;
+    }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(8px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+    .bubble.buy-yes { background: var(--green-dim); border-left: 3px solid var(--green); }
+    .bubble.buy-no { background: var(--red-dim); border-left: 3px solid var(--red); }
+    .bubble .amt { font-weight: 700; font-variant-numeric: tabular-nums; color: var(--gold); }
+
+    .contract-list { padding: 0; }
+    .contract-row {
+      border-bottom: 1px solid var(--border);
+      transition: background 0.18s, border-color 0.2s;
+      position: relative;
+    }
+    .contract-row:last-child { border-bottom: 0; }
+    .contract-row::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: 0;
+      opacity: 0;
+      background: linear-gradient(90deg, transparent, rgba(251, 191, 36, 0.07), transparent);
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+    .contract-row:hover::before { opacity: 1; }
+    .contract-row:hover {
+      background: rgba(255, 255, 255, 0.02);
+      border-color: rgba(59, 130, 246, 0.2);
+    }
+    .contract-row.selected {
+      background: rgba(88, 166, 255, 0.1);
+      box-shadow: inset 3px 0 0 var(--accent);
+    }
+    .contract-head {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 12px;
+      align-items: center;
+      padding: 14px 16px;
+      cursor: pointer;
+    }
+    .contract-name { font-weight: 700; font-size: 15px; }
+    .odds {
+      font-size: 20px;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      color: var(--green);
+      text-shadow: 0 0 18px rgba(52, 211, 153, 0.25);
+    }
+    .dir-btns { display: flex; gap: 10px; flex-wrap: wrap; }
+    .btn-mini {
+      font-size: 13px;
+      font-weight: 800;
+      padding: 10px 16px;
+      min-height: 42px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: rgba(0, 0, 0, 0.25);
+      color: var(--text);
+      cursor: pointer;
+      transition: transform 0.1s, border-color 0.15s, box-shadow 0.2s;
+    }
+    .btn-mini:hover { transform: scale(1.02); }
+    .btn-mini.yes { border-color: rgba(52, 211, 153, 0.55); color: var(--green); box-shadow: 0 0 16px rgba(52, 211, 153, 0.12); }
+    .btn-mini.no { border-color: rgba(248, 113, 113, 0.5); color: var(--red); }
+    .contract-expand {
+      display: none;
+      padding: 0 16px 16px;
+      border-top: 1px dashed var(--border);
+    }
+    .contract-row.open .contract-expand { display: block; }
+    .expand-tabs { display: flex; gap: 6px; margin: 12px 0 8px; }
+    .expand-tabs button {
+      flex: 1;
+      padding: 9px;
+      font-size: 12px;
+      font-weight: 700;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--muted);
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .expand-tabs button.active {
+      background: rgba(88, 166, 255, 0.18);
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+    .mini-chart { width: 100%; height: 140px; display: block; border-radius: 10px; background: #0c0c12; border: 1px solid var(--border); cursor: crosshair; touch-action: none; }
+    .orderbook {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      font-size: 11px;
+      margin-top: 8px;
+    }
+    .ob-col h4 { color: var(--muted); margin-bottom: 6px; font-size: 10px; text-transform: uppercase; }
+    .ob-row { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid var(--border); font-variant-numeric: tabular-nums; }
+    .ob-row.asks { color: var(--red); }
+    .ob-row.bids { color: var(--green); }
+
+    /* 侧栏：sticky + 视口内可滚动，避免计算器底部被裁切 */
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      position: sticky;
+      top: 12px;
+      align-self: start;
+      max-height: calc(100dvh - 24px);
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding-bottom: 12px;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-gutter: stable;
+    }
+    .sidebar::-webkit-scrollbar { width: 7px; }
+    .sidebar::-webkit-scrollbar-thumb {
+      background: rgba(90, 90, 120, 0.55);
+      border-radius: 4px;
+    }
+    .calc-card {
+      flex-shrink: 0;
+      padding: 20px;
+      padding-bottom: 22px;
+      background: linear-gradient(165deg, #1c1c28 0%, #14141e 100%);
+      border: 1px solid rgba(59, 130, 246, 0.32);
+      border-radius: 16px;
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.38);
+    }
+    .calc-card .module-title { margin-bottom: 10px; }
+    .calc-tip { font-size: 11px; color: var(--muted); margin-bottom: 14px; line-height: 1.45; }
+    .calc-selected { font-size: 12px; color: var(--muted); margin-bottom: 10px; }
+    .calc-selected strong { color: var(--text); }
+    label.lbl { display: block; font-size: 11px; font-weight: 600; color: #a1a1b5; margin-bottom: 4px; }
+    input.inp {
+      width: 100%;
+      padding: 11px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #0f0f16;
+      color: var(--text);
+      font-size: 14px;
+      font-variant-numeric: tabular-nums;
+      margin-bottom: 12px;
+    }
+    .side-toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+    .side-toggle button {
+      padding: 11px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: rgba(42, 42, 58, 0.45);
+      color: #e5e7eb;
+      font-weight: 700;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .side-toggle button.active-yes { border-color: rgba(52, 211, 153, 0.6); background: rgba(52, 211, 153, 0.16); color: #6ee7b7; }
+    .side-toggle button.active-no { border-color: rgba(248, 113, 113, 0.55); background: rgba(248, 113, 113, 0.12); color: #fca5a5; }
+    .calc-out { margin-bottom: 14px; }
+    .calc-hero {
+      text-align: center;
+      padding: 18px 14px 16px;
+      border-radius: 14px;
+      background:
+        radial-gradient(ellipse 80% 120% at 50% 0%, rgba(52, 211, 153, 0.22), transparent 55%),
+        linear-gradient(145deg, rgba(16, 185, 129, 0.14), rgba(37, 99, 235, 0.1));
+      border: 1px solid rgba(52, 211, 153, 0.45);
+      box-shadow:
+        0 0 40px rgba(52, 211, 153, 0.12),
+        inset 0 1px 0 rgba(255, 255, 255, 0.06);
+      margin-bottom: 12px;
+      animation: hero-glow 3.5s ease-in-out infinite alternate;
+    }
+    @keyframes hero-glow {
+      0% { box-shadow: 0 0 32px rgba(52, 211, 153, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.06); }
+      100% { box-shadow: 0 0 48px rgba(52, 211, 153, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.08); }
+    }
+    .calc-hero-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: #a7f3d0;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .calc-hero-profit {
+      font-size: clamp(28px, 8vw, 36px);
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+      line-height: 1.1;
+      background: linear-gradient(135deg, #fef08a 0%, #4ade80 40%, #34d399 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      filter: drop-shadow(0 0 20px rgba(52, 211, 153, 0.45));
+      margin-bottom: 6px;
+    }
+    .calc-hero-profit.negative {
+      background: linear-gradient(135deg, #fca5a5, #f87171);
+      -webkit-background-clip: text;
+      background-clip: text;
+      filter: drop-shadow(0 0 12px rgba(248, 113, 113, 0.35));
+    }
+    .calc-hero-sub {
+      font-size: 12px;
+      font-weight: 600;
+      color: #c4b5fd;
+      font-variant-numeric: tabular-nums;
+    }
+    .calc-hero-sub span { color: #fde68a; }
+    .calc-rows {
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 12px;
+    }
+    .calc-rows .row { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .calc-rows .row:last-child { margin-bottom: 0; }
+    .calc-rows .row .k { color: var(--muted); }
+    .calc-rows .row .v { font-weight: 700; font-variant-numeric: tabular-nums; color: #e5e7eb; }
+    .calc-rows .row-highlight .v { color: #6ee7b7; font-size: 13px; }
+    .cta {
+      width: 100%;
+      padding: 14px;
+      border: 0;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      color: #fff;
+      font-weight: 800;
+      font-size: 15px;
+      cursor: pointer;
+      box-shadow: 0 8px 28px rgba(37, 99, 235, 0.42);
+      transition: transform 0.15s, box-shadow 0.2s;
+    }
+    .cta:hover { transform: translateY(-2px); box-shadow: 0 12px 36px rgba(37, 99, 235, 0.5); }
+    .calc-social-fixed {
+      margin-top: 12px;
+      padding: 12px 14px;
+      border-radius: 10px;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(251, 191, 36, 0.22);
+      font-size: 12px;
+      line-height: 1.5;
+      color: #d1d5db;
+      text-align: center;
+    }
+    .calc-social-fixed .sn-user { color: #93c5fd; font-weight: 700; }
+    .calc-social-fixed strong { color: #fde68a; font-weight: 800; }
+    .sn-amt {
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+      color: #4ade80;
+      text-shadow: 0 0 14px rgba(52, 211, 153, 0.4);
+    }
+    .sn-amt.tick { animation: amt-pop 0.45s ease; }
+    @keyframes amt-pop {
+      0% { transform: scale(1); }
+      40% { transform: scale(1.08); }
+      100% { transform: scale(1); }
+    }
+
+    /* Webull 式合规 / 卖点 */
+    .trust-strip {
+      margin-top: 22px;
+      padding: 36px 28px 40px;
+      border-radius: 20px;
+      background:
+        linear-gradient(180deg, rgba(37, 99, 235, 0.12) 0%, transparent 45%),
+        linear-gradient(165deg, #1a1a24 0%, #12121a 100%);
+      border: 1px solid rgba(90, 90, 120, 0.35);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+    }
+    .trust-strip .trust-kicker {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #93c5fd;
+      margin-bottom: 10px;
+    }
+    .trust-strip .module-title {
+      margin-bottom: 10px;
+      max-width: 720px;
+    }
+    .trust-strip .trust-lead {
+      font-size: 15px;
+      color: #b4b4c4;
+      line-height: 1.65;
+      max-width: 720px;
+      margin-bottom: 28px;
+    }
+    .trust-strip .trust-lead em { font-style: normal; color: var(--gold); font-weight: 600; }
+    .trust-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+    @media (max-width: 900px) {
+      .trust-grid { grid-template-columns: 1fr; }
+    }
+    .trust-pillar {
+      padding: 22px 20px;
+      border-radius: 16px;
+      background: rgba(0, 0, 0, 0.28);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+    }
+    .trust-pillar:hover {
+      border-color: rgba(52, 211, 153, 0.35);
+      transform: translateY(-3px);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+    }
+    .trust-icon {
+      width: 52px;
+      height: 52px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      margin-bottom: 14px;
+      background: linear-gradient(145deg, rgba(59, 130, 246, 0.25), rgba(16, 185, 129, 0.15));
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .trust-pillar h3 {
+      font-size: 15px;
+      font-weight: var(--weight-card);
+      margin: 0 0 8px;
+      line-height: 1.35;
+      color: var(--text);
+    }
+    .trust-pillar p { font-size: 14px; color: #9ca3af; line-height: 1.6; }
+
+    .event-cards-scroll {
+      display: flex;
+      gap: 14px;
+      overflow-x: auto;
+      padding: 18px;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+    }
+    .event-cards-scroll::-webkit-scrollbar { height: 6px; }
+    .event-cards-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    .ev-card {
+      flex: 0 0 228px;
+      scroll-snap-align: start;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      cursor: pointer;
+      transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
+    }
+    .ev-card:hover { border-color: rgba(251, 191, 36, 0.45); transform: translateY(-3px); box-shadow: 0 12px 36px rgba(0, 0, 0, 0.35); }
+    .ev-card.hot { border-color: rgba(52, 211, 153, 0.4); box-shadow: 0 0 28px rgba(52, 211, 153, 0.12); }
+    .ev-card .tag { font-size: 10px; color: var(--heat); font-weight: 700; margin-bottom: 8px; letter-spacing: 0.04em; }
+    .ev-card .en { font-size: 14px; font-weight: 700; margin-bottom: 10px; line-height: 1.35; }
+    .ev-card .odds-row { font-size: 12px; color: var(--muted); }
+    .ev-card .odds-row span { color: var(--green); font-weight: 800; }
+
+    .mid-section { margin-top: 28px; }
+
+    /* 市场成交动态：三列滚动 + Toast（对齐 event-detail 火热交易） */
+    .hot-trades-section {
+      position: relative;
+      background: linear-gradient(180deg, #16161f 0%, #12121a 100%);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: visible;
+      box-shadow:
+        0 0 0 1px rgba(245, 158, 11, 0.06),
+        0 18px 56px rgba(0, 0, 0, 0.45);
+    }
+    .hot-trades-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      padding: 16px 18px;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(90deg, rgba(239, 68, 68, 0.12), rgba(37, 99, 235, 0.14), rgba(245, 158, 11, 0.1));
+      border-radius: 16px 16px 0 0;
+    }
+    .hot-trades-title {
+      font-size: var(--title-module);
+      font-weight: var(--weight-title);
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      line-height: 1.25;
+      color: var(--text);
+      letter-spacing: -0.02em;
+    }
+    .hot-trades-title .pulse-dot {
+      width: 9px;
+      height: 9px;
+      background: #f59e0b;
+      border-radius: 50%;
+      animation: pulse-dot 1.2s ease-in-out infinite;
+      box-shadow: 0 0 14px #f59e0b;
+      flex-shrink: 0;
+    }
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.65; transform: scale(1.15); }
+    }
+    .hot-trades-live {
+      font-size: 12px;
+      color: #fbbf24;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+    .hot-toast-layer {
+      position: absolute;
+      right: 14px;
+      top: 56px;
+      width: min(280px, 42vw);
+      pointer-events: none;
+      z-index: 5;
+    }
+    .hot-toast {
+      background: linear-gradient(90deg, rgba(16, 185, 129, 0.38), rgba(37, 99, 235, 0.22));
+      border: 1px solid rgba(52, 211, 153, 0.45);
+      border-radius: 10px;
+      padding: 10px 12px;
+      margin-bottom: 8px;
+      font-size: 12px;
+      color: #e2e8f0;
+      animation: toast-pop 3.2s ease-out forwards;
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.4);
+    }
+    .hot-toast.sell-toast {
+      background: linear-gradient(90deg, rgba(239, 68, 68, 0.28), rgba(37, 99, 235, 0.15));
+      border-color: rgba(248, 113, 113, 0.45);
+    }
+    @keyframes toast-pop {
+      0% { opacity: 0; transform: translateX(18px) scale(0.96); }
+      12% { opacity: 1; transform: translateX(0) scale(1); }
+      78% { opacity: 1; transform: translateY(-3px); }
+      100% { opacity: 0; transform: translateX(-10px) translateY(-24px); }
+    }
+    .hot-tracks {
+      display: flex;
+      gap: 12px;
+      padding: 12px;
+      border-radius: 0 0 16px 16px;
+    }
+    .hot-track-col {
+      flex: 1;
+      min-width: 0;
+      height: 148px;
+      overflow: hidden;
+      position: relative;
+    }
+    .hot-trades-viewport {
+      height: 100%;
+      overflow: hidden;
+      position: relative;
+      mask-image: linear-gradient(180deg, transparent, #000 6%, #000 94%, transparent);
+      -webkit-mask-image: linear-gradient(180deg, transparent, #000 6%, #000 94%, transparent);
+    }
+    .hot-trades-viewport::before,
+    .hot-trades-viewport::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 16px;
+      z-index: 2;
+      pointer-events: none;
+    }
+    .hot-trades-viewport::before {
+      top: 0;
+      background: linear-gradient(180deg, #12121a, transparent);
+    }
+    .hot-trades-viewport::after {
+      bottom: 0;
+      background: linear-gradient(0deg, #12121a, transparent);
+    }
+    .hot-track-inner {
+      animation: hot-scroll-up linear infinite;
+    }
+    .hot-track-col:nth-child(1) .hot-track-inner { animation-duration: 16s; }
+    .hot-track-col:nth-child(2) .hot-track-inner { animation-duration: 20s; animation-delay: -5s; }
+    .hot-track-col:nth-child(3) .hot-track-inner { animation-duration: 24s; animation-delay: -10s; }
+    @keyframes hot-scroll-up {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(-50%); }
+    }
+    @media (max-width: 900px) {
+      .hot-track-col:nth-child(3) { display: none; }
+      .hot-track-col { height: 132px; }
+      .hot-toast-layer { max-width: 70vw; top: 52px; }
+    }
+    .trade-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      margin-bottom: 6px;
+      background: rgba(42, 42, 58, 0.55);
+      border-radius: 10px;
+      border-left: 3px solid #2563eb;
+      font-size: 12px;
+      animation: row-flash 0.45s ease-out;
+    }
+    .trade-row.sell { border-left-color: #ef4444; }
+    .trade-row.buy { border-left-color: #10b981; }
+    @keyframes row-flash {
+      from {
+        background: rgba(37, 99, 235, 0.22);
+        transform: translateX(5px);
+      }
+      to {
+        background: rgba(42, 42, 58, 0.55);
+        transform: translateX(0);
+      }
+    }
+    .trade-side {
+      font-size: 10px;
+      font-weight: 800;
+      padding: 2px 6px;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+    .trade-side.yes {
+      background: rgba(16, 185, 129, 0.28);
+      color: #34d399;
+    }
+    .trade-side.no {
+      background: rgba(239, 68, 68, 0.22);
+      color: #f87171;
+    }
+    .trade-detail {
+      flex: 1;
+      min-width: 0;
+      color: #c4c4d4;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .trade-detail strong { color: #fff; }
+    .trade-amt {
+      font-weight: 800;
+      color: #fbbf24;
+      flex-shrink: 0;
+      font-variant-numeric: tabular-nums;
+      text-shadow: 0 0 12px rgba(251, 191, 36, 0.25);
+    }
+    .trade-time {
+      font-size: 11px;
+      color: #6b7280;
+      flex-shrink: 0;
+    }
+
+    /* FAQ（宽度随主列，与图表/合约等模块对齐） */
+    .faq-section {
+      margin-top: 28px;
+      padding-top: 24px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .faq-section .module-title { margin-bottom: 14px; }
+    .faq-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 100%;
+      max-width: none;
+    }
+    .faq-item {
+      background: linear-gradient(165deg, #1a1a24 0%, #14141c 100%);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .faq-item summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 16px 18px;
+      font-size: 15px;
+      font-weight: 700;
+      color: #f3f4f6;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      user-select: none;
+    }
+    .faq-item summary::-webkit-details-marker { display: none; }
+    .faq-item summary::after {
+      content: "+";
+      font-size: 18px;
+      font-weight: 300;
+      color: var(--muted);
+      flex-shrink: 0;
+    }
+    .faq-item[open] summary::after { content: "−"; color: var(--green); }
+    .faq-item summary:hover { background: rgba(255, 255, 255, 0.03); }
+    .faq-item .faq-a {
+      padding: 0 18px 16px;
+      font-size: 13px;
+      line-height: 1.65;
+      color: #9ca3af;
+      margin: 0;
+    }
+
+    /* 侧栏 24h 最热事件榜 */
+    .hot24-card {
+      flex-shrink: 0;
+      background: linear-gradient(165deg, #1a1520 0%, #14141c 100%);
+      border: 1px solid rgba(251, 191, 36, 0.2);
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+    }
+    .hot24-h {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(90deg, rgba(245, 158, 11, 0.1), transparent);
+    }
+    .hot24-h .module-title {
+      margin: 0;
+      font-size: var(--title-module);
+      font-weight: var(--weight-title);
+    }
+    .hot24-h .module-title .module-title-meta { color: var(--heat); font-weight: 600; }
+    .hot24-list { padding: 4px 0; }
+    .hot24-row {
+      display: grid;
+      grid-template-columns: 28px 1fr auto;
+      gap: 8px;
+      align-items: center;
+      padding: 10px 12px;
+      border-bottom: 1px solid rgba(42, 42, 58, 0.6);
+      font-size: 12px;
+    }
+    .hot24-row:last-child { border-bottom: 0; }
+    .hot24-rank {
+      width: 26px;
+      height: 26px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 11px;
+      background: var(--surface2);
+      color: var(--muted);
+    }
+    .hot24-row:nth-child(1) .hot24-rank {
+      background: linear-gradient(135deg, #f59e0b, #ea580c);
+      color: #fff;
+    }
+    .hot24-row:nth-child(2) .hot24-rank { color: #fcd34d; border: 1px solid rgba(251, 191, 36, 0.35); }
+    .hot24-row:nth-child(3) .hot24-rank { color: #fdba74; border: 1px solid rgba(253, 186, 116, 0.25); }
+    .hot24-name {
+      font-weight: 600;
+      color: #f3f4f6;
+      line-height: 1.35;
+      min-width: 0;
+    }
+    .hot24-vol {
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      color: #6ee7b7;
+      font-size: 11px;
+      white-space: nowrap;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding: 10px 18px 14px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+    .legend i {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin-right: 6px;
+      vertical-align: middle;
+      box-shadow: 0 0 8px currentColor;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="hype-marquee-wrap" aria-hidden="true">
+      <div class="hype-marquee" id="hypeMarquee"></div>
+    </div>
+
+    <header class="page-head">
+      <p class="breadcrumb"><a href="hub.html">事件市场</a> <span>/</span> 体育 · MLB <span>/</span> 事件合约详情</p>
+      <h1 id="pageTitle">2026 MLB 世界大赛冠军</h1>
+      <p class="sub">多合约并行交易 · 实时撮合 · 秒级行情（Demo 模拟数据）</p>
+      <div class="buzz-bar">
+        <div class="heat-row">
+          <span class="heat-label"><span class="fire">🔥</span>本事件热度</span>
+          <div class="heat-track"><div class="heat-fill" id="heatFill"></div></div>
+        </div>
+        <div class="crowd-stats">
+          <div class="crowd-stat"><span class="dot-live"></span>正在看盘 <strong id="liveViewers">2,847</strong> 人</div>
+          <div class="crowd-stat">⚡ 本分钟 <strong id="ordersPerMin">56</strong> 笔</div>
+          <div class="crowd-stat">📣 讨论 <strong id="threadHot">1.2k</strong> / 时</div>
+        </div>
+      </div>
+    </header>
+
+    <div class="grid-main">
+      <div class="main-col">
+        <div class="card">
+          <div class="card-h card-h--lg">
+            <h2>事件实时成交走势</h2>
+            <span class="badge-live">实时推送</span>
+          </div>
+          <p class="chart-axis-hint">图：24h 交易量前四名合约 · Yes 隐含概率走势 · 横轴时间 · 纵轴赔率 %（Demo）</p>
+          <div class="chart-row">
+            <canvas id="eventChart" width="800" height="280"></canvas>
+            <div class="chart-meta">
+              <div class="meta-stat">
+                <div class="label">事件总交易量（24h）</div>
+                <div class="value" id="totalVol">$8,018,857</div>
+              </div>
+              <div class="trade-bubbles">
+                <h3>逐笔成交</h3>
+                <div class="bubble-list" id="bubbles"></div>
+              </div>
+            </div>
+          </div>
+          <div class="legend" id="chartLegend"></div>
+        </div>
+
+        <div class="card" style="margin-top:18px;">
+          <div class="card-h card-h--lg">
+            <h2>合约列表</h2>
+            <span class="card-h-meta">点击展开走势 / 摆盘</span>
+          </div>
+          <div class="contract-list" id="contractList"></div>
+        </div>
+
+        <div class="card" style="margin-top:18px;">
+          <div class="card-h card-h--lg">
+            <h2>体育赛事热门事件</h2>
+            <span class="card-h-meta heat">🔥 高换手</span>
+          </div>
+          <div class="event-cards-scroll" id="relatedEvents"></div>
+        </div>
+
+        <div class="mid-section" style="margin-top:18px;">
+          <section class="hot-trades-section" aria-labelledby="hotTradesTitle">
+            <div class="hot-trades-head">
+              <h2 class="hot-trades-title" id="hotTradesTitle">
+                <span class="pulse-dot" aria-hidden="true"></span>
+                市场成交动态
+              </h2>
+              <span class="hot-trades-live">LIVE · 三路并行成交流 · 高密度刷新</span>
+            </div>
+            <div class="hot-toast-layer" id="hotToastLayer" aria-hidden="true"></div>
+            <div class="hot-tracks">
+              <div class="hot-track-col">
+                <div class="hot-trades-viewport">
+                  <div class="hot-track-inner" id="hotTrackA"></div>
+                </div>
+              </div>
+              <div class="hot-track-col">
+                <div class="hot-trades-viewport">
+                  <div class="hot-track-inner" id="hotTrackB"></div>
+                </div>
+              </div>
+              <div class="hot-track-col">
+                <div class="hot-trades-viewport">
+                  <div class="hot-track-inner" id="hotTrackC"></div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <section class="trust-strip" aria-labelledby="trustHeading">
+          <p class="trust-kicker">Event contracts · 不同于传统博彩盘口</p>
+          <h2 id="trustHeading" class="module-title">用「市场」的方式，交易赛事与宏观事件</h2>
+          <p class="trust-lead">
+            对可验证结果买入 <em>Yes</em> 或 <em>No</em>，价格随信息与成交实时变化；你可以在开赛前、进行中都调整观点。
+            下方三点帮你快速理解：这与「对赌庄家」的体育博彩不是同一类产品形态。
+          </p>
+          <div class="trust-grid">
+            <article class="trust-pillar">
+              <div class="trust-icon" aria-hidden="true">🛡️</div>
+              <h3>合规与清算纪律</h3>
+              <p>在受监管的交易所/清算框架下交易事件合约，规则与结算来源事先披露；资金按合约制度交割，非私盘对赌。</p>
+            </article>
+            <article class="trust-pillar">
+              <div class="trust-icon" aria-hidden="true">📉</div>
+              <h3>低门槛、按合约计价</h3>
+              <p>单笔以合约为单位计价与成交，无传统日内频繁交易限制包袱（以各平台规则为准）；费率结构公开可查。</p>
+            </article>
+            <article class="trust-pillar">
+              <div class="trust-icon" aria-hidden="true">🌐</div>
+              <h3>7×24 关注机会</h3>
+              <p>赛场有日程，市场可不眠：重大新闻、数据发布与跨时区事件，让盘面在非比赛时段同样活跃。</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="faq-section" aria-labelledby="faqTitle">
+          <h2 id="faqTitle" class="module-title">常见问题（FAQ）</h2>
+          <div class="faq-list">
+            <details class="faq-item">
+              <summary>什么是事件合约？和体育赛事博彩有什么区别？</summary>
+              <p class="faq-a">事件合约的标的多为可公开验证的客观结果（如赛事冠军、数据指标是否达标），价格在市场上由买卖盘形成；传统体育博彩多为庄家开盘与对赌模型。具体规则与适用法规以各平台披露及产品说明为准。</p>
+            </details>
+            <details class="faq-item">
+              <summary>Yes / No 价格代表什么？</summary>
+              <p class="faq-a">示意页中美分价格可理解为市场隐含的「发生 / 不发生」倾向的报价；结算时若您持有的方向与最终结果一致，通常按约定面值（如每份 $1）兑付，否则为 0。实际以交易端规则为准。</p>
+            </details>
+            <details class="faq-item">
+              <summary>图表与成交动态是真实数据吗？</summary>
+              <p class="faq-a">本页为产品演示（Demo），走势、逐笔与榜单均为模拟数据，仅用于展示交互与信息架构，不构成任何实盘行情或投资建议。</p>
+            </details>
+            <details class="faq-item">
+              <summary>收益计算器的结果是否保证盈利？</summary>
+              <p class="faq-a">计算器按您输入的金额与当前示意价估算「若判断正确」时的收回与净利；市场价格波动、手续费与滑点均可能影响实际结果，最大损失一般不超过您实际支付的权利金，具体以协议与风控提示为准。</p>
+            </details>
+            <details class="faq-item">
+              <summary>如何开始真实交易？</summary>
+              <p class="faq-a">请点击「在 App 内交易」完成开户、风险测评与入金，阅读事件合约风险披露文件后再下单。未成年人及不适格投资者请勿参与。</p>
+            </details>
+          </div>
+        </section>
+      </div>
+
+      <aside class="sidebar">
+        <div class="calc-card">
+          <h3 class="module-title">收益模拟计算器</h3>
+          <p class="calc-tip">与选中合约联动：按当前示意价估算若结算正确可收回金额与份额，非实盘报价。</p>
+          <p class="calc-selected">已选合约：<strong id="selName">—</strong></p>
+          <label class="lbl" for="calcAmount">投入金额（USD）</label>
+          <input class="inp" type="number" id="calcAmount" value="100" min="1" step="1" />
+          <div class="side-toggle">
+            <button type="button" id="btnYes" class="active-yes">买入 Yes</button>
+            <button type="button" id="btnNo">买入 No</button>
+          </div>
+          <div class="calc-out" id="calcOut"></div>
+          <button type="button" class="cta" id="ctaTrade">在 App 内交易</button>
+          <div class="calc-social-fixed" id="calcSocialLine" aria-live="polite">
+            <span class="sn-user" id="snUser">用户***8f</span><span> 在「</span><strong id="snContract">洛杉矶道奇</strong><span>」下注 </span><span class="sn-amt" id="snAmt">$2,340</span>
+          </div>
+        </div>
+
+        <div class="hot24-card" aria-labelledby="hot24Title">
+          <div class="hot24-h">
+            <h3 id="hot24Title" class="module-title">24h 市场最热事件 <span class="module-title-meta">· VOL</span></h3>
+          </div>
+          <div class="hot24-list" id="hot24List"></div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <script>
+    const CONTRACTS = [
+      { id: "lad", name: "洛杉矶道奇", odds: 0.29, vol: 46768, trades: 12847 },
+      { id: "sea", name: "西雅图水手", odds: 0.078, vol: 205886, trades: 45210 },
+      { id: "nyy", name: "纽约洋基", odds: 0.08, vol: 40038, trades: 9832 },
+      { id: "tor", name: "多伦多蓝鸟", odds: 0.07, vol: 37559, trades: 7211 },
+      { id: "nym", name: "纽约大都会", odds: 0.061, vol: 259407, trades: 31002 },
+    ];
+    const COLORS = ["#60a5fa", "#34d399", "#fbbf24", "#a78bfa", "#f472b6"];
+    let selectedId = CONTRACTS[0].id;
+    let calcSide = "yes";
+    let openContractId = null;
+    let miniView = "chart";
+
+    const historyLen = 80;
+    const TOP_N_EVENT = 4;
+    const CHART_PAD = { l: 48, r: 20, t: 24, b: 44 };
+
+    function buildOddsHistory() {
+      const rows = CONTRACTS.map((c) => {
+        const arr = new Array(historyLen);
+        let v = c.odds;
+        arr[historyLen - 1] = v;
+        for (let i = historyLen - 2; i >= 0; i--) {
+          let d = (Math.random() - 0.5) * 0.032;
+          if (Math.random() < 0.1) d += Math.sign(Math.random() - 0.5) * (0.04 + Math.random() * 0.06);
+          v = Math.max(0.01, Math.min(0.99, v + d));
+          arr[i] = v;
+        }
+        return arr;
+      });
+      for (let i = 0; i < historyLen; i++) {
+        if (i % 3 !== 0) continue;
+        const a = (Math.random() * CONTRACTS.length) | 0;
+        const b = (a + 1 + ((Math.random() * (CONTRACTS.length - 1)) | 0)) % CONTRACTS.length;
+        const pull = (Math.random() - 0.5) * 0.014;
+        rows[a][i] = Math.max(0.01, Math.min(0.99, rows[a][i] + pull));
+        rows[b][i] = Math.max(0.01, Math.min(0.99, rows[b][i] - pull * 0.85));
+      }
+      return rows;
+    }
+    const oddsHistory = buildOddsHistory();
+
+    function getTopVolumeIndices(n) {
+      return CONTRACTS.map((c, i) => ({ i, vol: c.vol }))
+        .sort((a, b) => b.vol - a.vol)
+        .slice(0, n)
+        .map((x) => x.i);
+    }
+
+    const HOT24_EVENTS = [
+      { title: "2026 美总统大选", vol: "$156.2M" },
+      { title: "2026 超级碗冠军", vol: "$42.1M" },
+      { title: "美联储 2026 降息次数", vol: "$28.4M" },
+      { title: "NBA 2026 总冠军", vol: "$31.0M" },
+      { title: "BTC 年底价格区间", vol: "$19.2M" },
+      { title: "2026 MLB 世界大赛冠军", vol: "$8.02M" },
+      { title: "欧冠 2025/26 冠军", vol: "$11.0M" },
+    ];
+
+    function fmtMoney(n) {
+      return "$" + Math.round(n).toLocaleString("en-US");
+    }
+    function fmtPct(p) {
+      return (p * 100).toFixed(1) + "%";
+    }
+
+    function setupHypeMarquee() {
+      const el = document.getElementById("hypeMarquee");
+      const parts = [
+        "🔥 刚成交 <em>$4.2K</em> 道奇 YES",
+        "⚡ <em>3 秒前</em> 用户***821 扫货大都会",
+        "📈 本分钟第 <em>62</em> 笔",
+        "💥 水手合约 <em>量价齐升</em>",
+        "👀 看盘人数 <em>飙升中</em>",
+        "🎯 大单吃掉盘口 <em>$12K</em>",
+      ];
+      const line = parts.join("      ·      ");
+      el.innerHTML = `<span class="hype-chunk">${line}</span><span class="hype-chunk">${line}</span>`;
+      setInterval(() => {
+        const extra = ` · <em>实时</em> ${CONTRACTS[(Math.random() * CONTRACTS.length) | 0].name}`;
+        const line2 = parts.join("      ·      ") + extra;
+        el.innerHTML = `<span class="hype-chunk">${line2}</span><span class="hype-chunk">${line2}</span>`;
+      }, 14000);
+    }
+
+    function setupCrowdPulse() {
+      const lv = document.getElementById("liveViewers");
+      const om = document.getElementById("ordersPerMin");
+      const th = document.getElementById("threadHot");
+      setInterval(() => {
+        if (lv) lv.textContent = (2200 + Math.floor(Math.random() * 1800)).toLocaleString();
+        if (om) om.textContent = String(48 + Math.floor(Math.random() * 75));
+        if (th) th.textContent = (1.0 + Math.random() * 0.45).toFixed(1) + "k";
+      }, 1900);
+    }
+
+    function renderHot24List() {
+      const root = document.getElementById("hot24List");
+      if (!root) return;
+      root.innerHTML = HOT24_EVENTS.map(
+        (e, i) => `
+        <div class="hot24-row">
+          <span class="hot24-rank">${i + 1}</span>
+          <span class="hot24-name">${e.title}</span>
+          <span class="hot24-vol">${e.vol}</span>
+        </div>`
+      ).join("");
+    }
+
+    function renderLegend() {
+      const el = document.getElementById("chartLegend");
+      const topIdx = getTopVolumeIndices(TOP_N_EVENT);
+      el.innerHTML = topIdx
+        .map(
+          (i) =>
+            `<span><i style="background:${COLORS[i]};color:${COLORS[i]}"></i>${CONTRACTS[i].name}</span>`
+        )
+        .join("");
+    }
+
+    function syncOddsToDom() {
+      CONTRACTS.forEach((c) => {
+        const row = document.querySelector(`.contract-row[data-id="${c.id}"]`);
+        if (!row) return;
+        const oddsEl = row.querySelector(".odds");
+        if (oddsEl) oddsEl.textContent = fmtPct(c.odds);
+        const yesBtn = row.querySelector(".btn-mini.yes");
+        const noBtn = row.querySelector(".btn-mini.no");
+        if (yesBtn) yesBtn.textContent = `买 Yes ${(c.odds * 100).toFixed(0)}¢`;
+        if (noBtn) noBtn.textContent = `买 No ${((1 - c.odds) * 100).toFixed(0)}¢`;
+      });
+    }
+
+    function renderContracts() {
+      const root = document.getElementById("contractList");
+      root.innerHTML = CONTRACTS.map((c) => {
+        const open = openContractId === c.id;
+        return `
+        <div class="contract-row ${selectedId === c.id ? "selected" : ""} ${open ? "open" : ""}" data-id="${c.id}">
+          <div class="contract-head">
+            <span class="contract-name">${c.name}</span>
+            <span class="odds">${fmtPct(c.odds)}</span>
+            <div class="dir-btns">
+              <button type="button" class="btn-mini yes" data-act="yes">买 Yes ${(c.odds * 100).toFixed(0)}¢</button>
+              <button type="button" class="btn-mini no" data-act="no">买 No ${((1 - c.odds) * 100).toFixed(0)}¢</button>
+            </div>
+          </div>
+          <div class="contract-expand">
+            <div class="expand-tabs">
+              <button type="button" class="${miniView === "chart" && open ? "active" : ""}" data-tab="chart">合约赔率走势</button>
+              <button type="button" class="${miniView === "orderbook" && open ? "active" : ""}" data-tab="orderbook">交易摆盘</button>
+            </div>
+            <canvas class="mini-chart" data-mini="${c.id}" style="display:${miniView === "chart" || !open ? "block" : "none"}"></canvas>
+            <div class="orderbook" id="ob-${c.id}" style="display:${miniView === "orderbook" && open ? "grid" : "none"}"></div>
+          </div>
+        </div>`;
+      }).join("");
+
+      root.querySelectorAll(".contract-head").forEach((head) => {
+        head.addEventListener("click", (e) => {
+          if (e.target.closest(".btn-mini")) return;
+          const row = head.closest(".contract-row");
+          const id = row.dataset.id;
+          selectedId = id;
+          openContractId = openContractId === id ? null : id;
+          updateCalc();
+          tickSnLine();
+          renderContracts();
+          if (openContractId) requestAnimationFrame(() => drawMiniChart());
+        });
+      });
+      root.querySelectorAll(".btn-mini").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const row = btn.closest(".contract-row");
+          selectedId = row.dataset.id;
+          calcSide = btn.dataset.act;
+          document.getElementById("btnYes").classList.toggle("active-yes", calcSide === "yes");
+          document.getElementById("btnNo").classList.toggle("active-no", calcSide === "no");
+          renderContracts();
+          updateCalc();
+          tickSnLine();
+        });
+      });
+      root.querySelectorAll(".expand-tabs button").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          miniView = btn.dataset.tab;
+          const row = btn.closest(".contract-row");
+          openContractId = row.dataset.id;
+          renderContracts();
+          requestAnimationFrame(() => drawMiniChart());
+        });
+      });
+      if (openContractId) {
+        renderOrderbook(openContractId);
+        drawMiniChart();
+      }
+    }
+
+    function renderOrderbook(id) {
+      const c = CONTRACTS.find((x) => x.id === id);
+      if (!c) return;
+      const el = document.getElementById("ob-" + id);
+      if (!el) return;
+      const mid = c.odds;
+      const asks = [0.01, 0.02, 0.03].map((x) => ({
+        p: (mid + x).toFixed(2),
+        sz: (8000 + Math.random() * 4000) | 0,
+      }));
+      const bids = [0.01, 0.02, 0.03].map((x) => ({
+        p: Math.max(0.01, mid - x).toFixed(2),
+        sz: (7000 + Math.random() * 5000) | 0,
+      }));
+      el.innerHTML = `
+        <div class="ob-col">
+          <h4>卖盘 Asks</h4>
+          ${asks.map((r) => `<div class="ob-row asks"><span>${(r.p * 100).toFixed(1)}¢</span><span>${r.sz.toLocaleString()}</span></div>`).join("")}
+        </div>
+        <div class="ob-col">
+          <h4>买盘 Bids</h4>
+          ${bids.map((r) => `<div class="ob-row bids"><span>${(r.p * 100).toFixed(1)}¢</span><span>${r.sz.toLocaleString()}</span></div>`).join("")}
+        </div>`;
+    }
+
+    const eventCanvas = document.getElementById("eventChart");
+    const eventCtx = eventCanvas.getContext("2d");
+
+    function resizeCanvas() {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const rect = eventCanvas.getBoundingClientRect();
+      eventCanvas.width = rect.width * dpr;
+      eventCanvas.height = rect.height * dpr;
+      eventCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    function eventChartRoundRect(ctx, x, y, w, h, r) {
+      const rr = Math.min(r, w / 2, h / 2);
+      ctx.beginPath();
+      ctx.moveTo(x + rr, y);
+      ctx.arcTo(x + w, y, x + w, y + h, rr);
+      ctx.arcTo(x + w, y + h, x, y + h, rr);
+      ctx.arcTo(x, y + h, x, y, rr);
+      ctx.arcTo(x, y, x + w, y, rr);
+      ctx.closePath();
+    }
+
+    function drawEventChart(hoverIndex = null) {
+      const w = eventCanvas.getBoundingClientRect().width;
+      const h = eventCanvas.getBoundingClientRect().height;
+      eventCtx.clearRect(0, 0, w, h);
+      const pad = CHART_PAD;
+      const cw = w - pad.l - pad.r;
+      const ch = h - pad.t - pad.b;
+      const topIdx = getTopVolumeIndices(TOP_N_EVENT);
+      let gmin = Infinity;
+      let gmax = -Infinity;
+      topIdx.forEach((si) => {
+        oddsHistory[si].forEach((v) => {
+          const p = v * 100;
+          gmin = Math.min(gmin, p);
+          gmax = Math.max(gmax, p);
+        });
+      });
+      if (!isFinite(gmin) || !isFinite(gmax)) return;
+      let span = gmax - gmin;
+      if (span < 2) span = 2;
+      gmin = Math.max(0, gmin - span * 0.12);
+      gmax = Math.min(100, gmax + span * 0.12);
+      const yScale = gmax - gmin || 1;
+
+      eventCtx.strokeStyle = "#2a2a3a";
+      eventCtx.lineWidth = 1;
+      eventCtx.fillStyle = "#6b7280";
+      eventCtx.font = "11px DM Sans, sans-serif";
+      eventCtx.textAlign = "right";
+      eventCtx.textBaseline = "middle";
+      for (let g = 0; g <= 4; g++) {
+        const frac = g / 4;
+        const val = gmin + yScale * (1 - frac);
+        const y = pad.t + (ch * g) / 4;
+        eventCtx.beginPath();
+        eventCtx.moveTo(pad.l, y);
+        eventCtx.lineTo(pad.l + cw, y);
+        eventCtx.stroke();
+        eventCtx.fillText(`${val.toFixed(1)}%`, pad.l - 8, y);
+      }
+
+      const selSi = CONTRACTS.findIndex((x) => x.id === selectedId);
+      const hi =
+        hoverIndex != null && hoverIndex >= 0 && hoverIndex < historyLen ? hoverIndex : null;
+
+      const strokePart = (si, i0, i1, alpha, lineW, glow) => {
+        const arr = oddsHistory[si];
+        eventCtx.beginPath();
+        for (let i = i0; i <= i1; i++) {
+          const pct = arr[i] * 100;
+          const x = pad.l + (cw * i) / (arr.length - 1);
+          const y = pad.t + ch - ((pct - gmin) / yScale) * ch;
+          if (i === i0) eventCtx.moveTo(x, y);
+          else eventCtx.lineTo(x, y);
+        }
+        eventCtx.strokeStyle = COLORS[si];
+        eventCtx.lineWidth = lineW;
+        eventCtx.globalAlpha = alpha;
+        if (glow) {
+          eventCtx.shadowColor = COLORS[si];
+          eventCtx.shadowBlur = 12;
+        } else eventCtx.shadowBlur = 0;
+        eventCtx.stroke();
+        eventCtx.shadowBlur = 0;
+        eventCtx.globalAlpha = 1;
+      };
+
+      topIdx.forEach((si) => {
+        const sel = selSi === si;
+        const lw = sel ? 3 : 1.85;
+        if (hi != null && hi < historyLen - 1) {
+          strokePart(si, hi, historyLen - 1, sel ? 0.38 : 0.28, lw * 0.92, false);
+          strokePart(si, 0, hi, sel ? 1 : 0.58, lw, sel);
+        } else {
+          strokePart(si, 0, historyLen - 1, sel ? 1 : 0.58, lw, sel);
+        }
+      });
+
+      if (hi == null) {
+        topIdx.forEach((si) => {
+          const arr = oddsHistory[si];
+          const last = arr[arr.length - 1] * 100;
+          const lx = pad.l + cw;
+          const ly = pad.t + ch - ((last - gmin) / yScale) * ch;
+          eventCtx.fillStyle = COLORS[si];
+          eventCtx.beginPath();
+          eventCtx.arc(lx, ly, selSi === si ? 5.5 : 3.5, 0, Math.PI * 2);
+          eventCtx.fill();
+        });
+      }
+
+      if (hi != null) {
+        const hx = pad.l + (cw * hi) / (historyLen - 1);
+        eventCtx.strokeStyle = "rgba(160, 160, 180, 0.55)";
+        eventCtx.lineWidth = 1;
+        eventCtx.setLineDash([4, 4]);
+        eventCtx.beginPath();
+        eventCtx.moveTo(hx, pad.t);
+        eventCtx.lineTo(hx, pad.t + ch);
+        eventCtx.stroke();
+        eventCtx.setLineDash([]);
+
+        const secAgo = historyLen - 1 - hi;
+        eventCtx.font = "600 11px DM Sans, sans-serif";
+        eventCtx.fillStyle = "#9ca3af";
+        eventCtx.textAlign = "center";
+        eventCtx.textBaseline = "bottom";
+        eventCtx.fillText(secAgo === 0 ? "现在" : `约 −${secAgo}s`, hx, pad.t - 2);
+
+        const pills = [];
+        topIdx.forEach((si) => {
+          const arr = oddsHistory[si];
+          const v = arr[hi];
+          const prev = hi > 0 ? arr[hi - 1] : v;
+          const up = v >= prev - 1e-6;
+          const name = CONTRACTS[si].name.slice(0, 6);
+          pills.push({
+            color: COLORS[si],
+            arrow: up ? "↑" : "↓",
+            main: name + " · " + Math.round(v * 100) + "¢",
+            sub: (v * 100).toFixed(1) + "%",
+          });
+        });
+
+        eventCtx.font = "600 11px DM Sans, sans-serif";
+        const pillH = 24;
+        const gap = 5;
+        const padX = 9;
+        let maxW = 0;
+        pills.forEach((p) => {
+          maxW = Math.max(maxW, eventCtx.measureText(`${p.arrow} ${p.main}  ${p.sub}`).width);
+        });
+        const pillW = maxW + padX * 2;
+        let px = hx + 10;
+        if (px + pillW > pad.l + cw - 4) px = hx - pillW - 10;
+        let py = pad.t + 12;
+        pills.forEach((p) => {
+          const text = `${p.arrow} ${p.main}  ${p.sub}`;
+          eventChartRoundRect(eventCtx, px, py, pillW, pillH, 7);
+          eventCtx.fillStyle = p.color;
+          eventCtx.globalAlpha = 0.94;
+          eventCtx.fill();
+          eventCtx.globalAlpha = 1;
+          eventCtx.strokeStyle = "rgba(255,255,255,0.3)";
+          eventCtx.lineWidth = 1;
+          eventChartRoundRect(eventCtx, px, py, pillW, pillH, 7);
+          eventCtx.stroke();
+          eventCtx.fillStyle = "#fff";
+          eventCtx.textAlign = "left";
+          eventCtx.textBaseline = "middle";
+          eventCtx.fillText(text, px + padX, py + pillH / 2);
+          py += pillH + gap;
+        });
+
+        topIdx.forEach((si) => {
+          const arr = oddsHistory[si];
+          const pct = arr[hi] * 100;
+          const hy = pad.t + ch - ((pct - gmin) / yScale) * ch;
+          eventCtx.fillStyle = COLORS[si];
+          eventCtx.beginPath();
+          eventCtx.arc(hx, hy, selSi === si ? 5.5 : 4.5, 0, Math.PI * 2);
+          eventCtx.fill();
+          eventCtx.strokeStyle = "rgba(0,0,0,0.4)";
+          eventCtx.lineWidth = 1;
+          eventCtx.stroke();
+          eventCtx.setLineDash([2, 3]);
+          eventCtx.strokeStyle = COLORS[si];
+          eventCtx.globalAlpha = 0.45;
+          eventCtx.beginPath();
+          eventCtx.moveTo(pad.l, hy);
+          eventCtx.lineTo(hx, hy);
+          eventCtx.stroke();
+          eventCtx.setLineDash([]);
+          eventCtx.globalAlpha = 1;
+        });
+      }
+
+      eventCtx.fillStyle = "#6b7280";
+      eventCtx.font = "11px DM Sans, sans-serif";
+      eventCtx.textAlign = "center";
+      eventCtx.textBaseline = "top";
+      eventCtx.fillText("较早", pad.l, h - 36);
+      eventCtx.fillText("约 −40s", pad.l + cw / 2, h - 36);
+      eventCtx.fillText("现在", pad.l + cw, h - 36);
+      eventCtx.font = "10px DM Sans, sans-serif";
+      eventCtx.fillText("时间（约近 " + historyLen + " 秒 · Demo）", pad.l + cw / 2, h - 14);
+    }
+
+    let miniChartHover = null;
+
+    function drawMiniChart() {
+      if (!openContractId) return;
+      const c = CONTRACTS.find((x) => x.id === openContractId);
+      if (!c || miniView !== "chart") return;
+      const canv = document.querySelector(`canvas[data-mini="${openContractId}"]`);
+      if (!canv) return;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const rect = canv.getBoundingClientRect();
+      canv.width = rect.width * dpr;
+      canv.height = rect.height * dpr;
+      const ctx = canv.getContext("2d");
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const w = rect.width;
+      const h = rect.height;
+      const idx = CONTRACTS.indexOf(c);
+      const arr = oddsHistory[idx];
+      const mp = { l: 38, r: 6, t: 8, b: 30 };
+      const cw = w - mp.l - mp.r;
+      const ch = h - mp.t - mp.b;
+      ctx.clearRect(0, 0, w, h);
+      const pctArr = arr.map((v) => v * 100);
+      let gmin = Math.min(...pctArr);
+      let gmax = Math.max(...pctArr);
+      let span = gmax - gmin || 1;
+      if (span < 1.5) span = 1.5;
+      gmin = Math.max(0, gmin - span * 0.18);
+      gmax = Math.min(100, gmax + span * 0.18);
+      const yScale = gmax - gmin || 1;
+      const hi =
+        miniChartHover != null && miniChartHover >= 0 && miniChartHover < historyLen
+          ? miniChartHover
+          : null;
+
+      ctx.strokeStyle = "#2a2a3a";
+      ctx.lineWidth = 1;
+      ctx.fillStyle = "#6b7280";
+      ctx.font = "10px DM Sans, sans-serif";
+      ctx.textAlign = "right";
+      ctx.textBaseline = "middle";
+      for (let g = 0; g <= 2; g++) {
+        const frac = g / 2;
+        const val = gmin + yScale * (1 - frac);
+        const y = mp.t + (ch * g) / 2;
+        ctx.beginPath();
+        ctx.moveTo(mp.l, y);
+        ctx.lineTo(mp.l + cw, y);
+        ctx.stroke();
+        ctx.fillText(`${val.toFixed(0)}%`, mp.l - 4, y);
+      }
+
+      const strokeSeg = (i0, i1, alpha, lw, glow) => {
+        ctx.beginPath();
+        for (let i = i0; i <= i1; i++) {
+          const pct = arr[i] * 100;
+          const x = mp.l + (cw * i) / (arr.length - 1);
+          const y = mp.t + ch - ((pct - gmin) / yScale) * ch;
+          if (i === i0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.strokeStyle = COLORS[idx];
+        ctx.lineWidth = lw;
+        ctx.globalAlpha = alpha;
+        if (glow) {
+          ctx.shadowColor = COLORS[idx];
+          ctx.shadowBlur = 8;
+        } else ctx.shadowBlur = 0;
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+        ctx.globalAlpha = 1;
+      };
+
+      if (hi != null && hi < historyLen - 1) {
+        strokeSeg(hi, historyLen - 1, 0.35, 1.65, false);
+        strokeSeg(0, hi, 1, 2.15, true);
+      } else {
+        strokeSeg(0, historyLen - 1, 1, 2.15, true);
+      }
+
+      ctx.fillStyle = COLORS[idx];
+      ctx.globalAlpha = 0.12;
+      ctx.beginPath();
+      arr.forEach((v, i) => {
+        const pct = v * 100;
+        const x = mp.l + (cw * i) / (arr.length - 1);
+        const y = mp.t + ch - ((pct - gmin) / yScale) * ch;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.lineTo(mp.l + cw, mp.t + ch);
+      ctx.lineTo(mp.l, mp.t + ch);
+      ctx.closePath();
+      ctx.fill();
+      ctx.globalAlpha = 1;
+
+      if (hi != null) {
+        const hx = mp.l + (cw * hi) / (arr.length - 1);
+        ctx.strokeStyle = "rgba(150, 160, 190, 0.55)";
+        ctx.setLineDash([3, 3]);
+        ctx.beginPath();
+        ctx.moveTo(hx, mp.t);
+        ctx.lineTo(hx, mp.t + ch);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        const pct = arr[hi] * 100;
+        const hy = mp.t + ch - ((pct - gmin) / yScale) * ch;
+        ctx.fillStyle = COLORS[idx];
+        ctx.beginPath();
+        ctx.arc(hx, hy, 5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = "rgba(0,0,0,0.35)";
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        const prev = hi > 0 ? arr[hi - 1] : arr[hi];
+        const up = arr[hi] >= prev - 1e-6;
+        const sec = historyLen - 1 - hi;
+        ctx.font = "600 10px DM Sans, sans-serif";
+        ctx.fillStyle = "#c4c4d8";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "top";
+        ctx.fillText(
+          `${up ? "↑" : "↓"} Yes ${(arr[hi] * 100).toFixed(1)}% · ${sec === 0 ? "现在" : "−" + sec + "s"}`,
+          mp.l + cw / 2,
+          h - 22
+        );
+      }
+
+      ctx.textAlign = "center";
+      ctx.textBaseline = "top";
+      ctx.fillStyle = "#6b7280";
+      ctx.font = "10px DM Sans, sans-serif";
+      ctx.fillText("时间 →", mp.l + cw / 2, h - 36);
+      ctx.fillText("悬停查看各时点（Demo）", mp.l + cw / 2, h - 8);
+    }
+
+    function setupMiniChartHover() {
+      const root = document.getElementById("contractList");
+      if (!root || root.dataset.miniHoverBound) return;
+      root.dataset.miniHoverBound = "1";
+      root.addEventListener("mousemove", (e) => {
+        const canv = e.target.closest("canvas.mini-chart");
+        if (!canv || miniView !== "chart" || openContractId !== canv.getAttribute("data-mini")) {
+          if (miniChartHover !== null) {
+            miniChartHover = null;
+            drawMiniChart();
+          }
+          return;
+        }
+        const rect = canv.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const mpL = 38;
+        const mpR = 6;
+        const cw = Math.max(8, rect.width - mpL - mpR);
+        let ix = Math.round(((x - mpL) / cw) * (historyLen - 1));
+        ix = Math.max(0, Math.min(historyLen - 1, ix));
+        if (miniChartHover !== ix) {
+          miniChartHover = ix;
+          drawMiniChart();
+        }
+      });
+    }
+
+    const bubblesEl = document.getElementById("bubbles");
+    function pushBubble() {
+      const c = CONTRACTS[(Math.random() * CONTRACTS.length) | 0];
+      const yes = Math.random() > 0.45;
+      const amt = (Math.random() * 12000 + 200) | 0;
+      const div = document.createElement("div");
+      div.className = "bubble " + (yes ? "buy-yes" : "buy-no");
+      div.innerHTML = `<span>${c.name} · ${yes ? "Yes" : "No"}</span><span class="amt">${fmtMoney(amt)}</span>`;
+      bubblesEl.insertBefore(div, bubblesEl.firstChild);
+      while (bubblesEl.children.length > 6) bubblesEl.removeChild(bubblesEl.lastChild);
+    }
+
+    let totalVolBase = 8018857;
+    function tickVolume() {
+      totalVolBase += (Math.random() * 800 + 100) | 0;
+      document.getElementById("totalVol").textContent = fmtMoney(totalVolBase);
+    }
+
+    function tickOdds() {
+      const top = getTopVolumeIndices(Math.min(4, CONTRACTS.length));
+      const spine = (Math.random() - 0.5) * 0.024;
+      const shock = Math.random() < 0.088 ? Math.sign(Math.random() - 0.5) * (0.038 + Math.random() * 0.04) : 0;
+      CONTRACTS.forEach((c, si) => {
+        const arr = oddsHistory[si];
+        const last = arr[arr.length - 1];
+        let delta = (Math.random() - 0.5) * 0.016;
+        if (top[0] === si) delta += spine * 0.95 + shock * 0.42;
+        if (top.length > 1 && top[1] === si) delta -= spine * 0.72 + shock * 0.38;
+        if (top.includes(si) && Math.random() < 0.07) delta += (Math.random() - 0.5) * 0.048;
+        const next = Math.max(0.01, Math.min(0.99, last + delta));
+        arr.push(next);
+        arr.shift();
+        c.odds = next;
+      });
+      syncOddsToDom();
+      updateCalc();
+      resizeCanvas();
+      drawEventChart(chartHover);
+      if (openContractId && miniView === "chart") drawMiniChart();
+    }
+
+    function updateCalc() {
+      const c = CONTRACTS.find((x) => x.id === selectedId);
+      document.getElementById("selName").textContent = c ? c.name : "—";
+      const amt = parseFloat(document.getElementById("calcAmount").value) || 0;
+      const price = calcSide === "yes" ? c.odds : 1 - c.odds;
+      const shares = price > 0 ? amt / price : 0;
+      const payoutWin = shares * 1;
+      const profitWin = payoutWin - amt;
+      const mult = price > 0 ? (1 / price).toFixed(2) : "—";
+      const heroProfit =
+        amt > 0
+          ? (profitWin >= 0 ? "+" : "−") + fmtMoney(Math.abs(profitWin))
+          : "—";
+      const heroClass =
+        "calc-hero-profit" + (amt > 0 && profitWin < 0 ? " negative" : "");
+      const payoutLabel = amt > 0 ? fmtMoney(payoutWin) : "—";
+      const multLabel = amt > 0 ? mult + "x" : "—";
+      document.getElementById("calcOut").innerHTML = `
+        <div class="calc-hero">
+          <div class="calc-hero-label">若判断正确 · 预估净收益</div>
+          <div class="${heroClass}">${heroProfit}</div>
+          <div class="calc-hero-sub">预计收回 <span>${payoutLabel}</span> · 约 <span>${multLabel}</span> 倍潜在空间</div>
+        </div>
+        <div class="calc-rows">
+          <div class="row"><span class="k">方向</span><span class="v">${calcSide === "yes" ? "买入 Yes" : "买入 No"} @ ${(price * 100).toFixed(1)}¢</span></div>
+          <div class="row row-highlight"><span class="k">约可买份额</span><span class="v">${amt > 0 ? shares.toFixed(2) + " 份" : "—"}</span></div>
+          <div class="row"><span class="k">投入本金</span><span class="v">${amt > 0 ? fmtMoney(amt) : "—"}</span></div>
+        </div>
+      `;
+    }
+
+    document.getElementById("btnYes").addEventListener("click", () => {
+      calcSide = "yes";
+      document.getElementById("btnYes").classList.add("active-yes");
+      document.getElementById("btnNo").classList.remove("active-no");
+      updateCalc();
+    });
+    document.getElementById("btnNo").addEventListener("click", () => {
+      calcSide = "no";
+      document.getElementById("btnNo").classList.add("active-no");
+      document.getElementById("btnYes").classList.remove("active-yes");
+      updateCalc();
+    });
+    document.getElementById("calcAmount").addEventListener("input", updateCalc);
+    document.getElementById("ctaTrade").addEventListener("click", () => {
+      alert("Demo：此处跳转 App 深链 / 应用商店");
+    });
+
+    const SN_USERS = ["用户***8f", "Trader***21", "poly***ac", "desk***7e", "arbi***03", "wha***be"];
+
+    function tickSnLine() {
+      const u = SN_USERS[(Math.random() * SN_USERS.length) | 0];
+      const contract = CONTRACTS.find((x) => x.id === selectedId) || CONTRACTS[0];
+      const amt = (Math.random() * 18000 + 220) | 0;
+      const userEl = document.getElementById("snUser");
+      const contractEl = document.getElementById("snContract");
+      const amtEl = document.getElementById("snAmt");
+      if (!userEl || !contractEl || !amtEl) return;
+      userEl.textContent = u;
+      contractEl.textContent = contract.name;
+      amtEl.textContent = fmtMoney(amt);
+      amtEl.classList.remove("tick");
+      void amtEl.offsetWidth;
+      amtEl.classList.add("tick");
+    }
+
+    function fmtTime() {
+      const d = new Date();
+      return (
+        String(d.getHours()).padStart(2, "0") +
+        ":" +
+        String(d.getMinutes()).padStart(2, "0") +
+        ":" +
+        String(d.getSeconds()).padStart(2, "0")
+      );
+    }
+
+    function oneTradeRow(seed) {
+      const buy = (Math.sin(seed * 0.7) * 10000 + Math.random() * 10000) % 1 > 0.42;
+      const side = buy ? "yes" : "no";
+      const c =
+        CONTRACTS[(Math.floor(seed * 13) + Math.floor(Math.random() * 3)) % CONTRACTS.length];
+      const k = (Math.random() * 8.2 + 0.35).toFixed(2);
+      const cls = buy ? "buy" : "sell";
+      return (
+        `<div class="trade-row ${cls}">` +
+        `<span class="trade-side ${side}">${buy ? "YES" : "NO"}</span>` +
+        `<span class="trade-detail"><strong>${c.name}</strong> · 世界大赛</span>` +
+        `<span class="trade-amt">$${k}K</span>` +
+        `<span class="trade-time">${fmtTime()}</span>` +
+        `</div>`
+      );
+    }
+
+    function fillHotTrack(el, count, offset) {
+      let html = "";
+      for (let i = 0; i < count; i++) html += oneTradeRow(offset + i * 0.31);
+      el.innerHTML = html + html;
+    }
+
+    function setupHotTrades() {
+      const a = document.getElementById("hotTrackA");
+      const b = document.getElementById("hotTrackB");
+      const c = document.getElementById("hotTrackC");
+      const layer = document.getElementById("hotToastLayer");
+      if (!a || !b) return;
+      fillHotTrack(a, 40, 0);
+      fillHotTrack(b, 44, 77);
+      if (c) fillHotTrack(c, 38, 150);
+      function pushToast() {
+        if (!layer) return;
+        const buy = Math.random() > 0.35;
+        const cn = CONTRACTS[(Math.random() * CONTRACTS.length) | 0];
+        const k = (Math.random() * 9 + 0.18).toFixed(2);
+        const mask = "***" + String(Math.floor(Math.random() * 900 + 100));
+        const t = document.createElement("div");
+        t.className = "hot-toast" + (buy ? "" : " sell-toast");
+        t.innerHTML =
+          (buy ? "🔥 火热" : "⚡ 平仓") +
+          " · 用户 <strong>" +
+          mask +
+          "</strong> " +
+          (buy ? "买入" : "卖出") +
+          " <strong>" +
+          cn.name +
+          "</strong> " +
+          (buy ? "YES" : "NO") +
+          ' <span style="color:#fbbf24">$' +
+          k +
+          "K</span>";
+        layer.appendChild(t);
+        while (layer.children.length > 7) layer.removeChild(layer.firstChild);
+        setTimeout(() => {
+          if (t.parentNode === layer) layer.removeChild(t);
+        }, 2800);
+      }
+      pushToast();
+      setInterval(() => pushToast(), 900 + Math.random() * 700);
+    }
+
+    const RELATED = [
+      { cat: "体育 · MLB", title: "2026 美联冠军", hot: true, topOdds: "洋基 18%", vol: "$6.2M" },
+      { cat: "体育 · MLB", title: "2026 国联冠军", hot: false, topOdds: "道奇 24%", vol: "$4.8M" },
+      { cat: "体育", title: "NBA 2026 总冠军", hot: true, topOdds: "雷霆 22%", vol: "$31M" },
+      { cat: "金融", title: "标普 500 年终点位", hot: false, topOdds: ">6000 12%", vol: "$8.9M" },
+      { cat: "政治", title: "某国大选出口民调", hot: true, topOdds: "候选人 A 51%", vol: "$22M" },
+    ];
+    document.getElementById("relatedEvents").innerHTML = RELATED.map(
+      (r) => `
+      <div class="ev-card ${r.hot ? "hot" : ""}">
+        <div class="tag">${r.hot ? "🔥 交易火热" : r.cat}</div>
+        <div class="en">${r.title}</div>
+        <div class="odds-row">最大量合约：<span>${r.topOdds}</span></div>
+        <div class="odds-row">事件总交易量：<span>${r.vol}</span></div>
+      </div>`
+    ).join("");
+
+    let chartHover = null;
+    eventCanvas.addEventListener("mousemove", (e) => {
+      const rect = eventCanvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const padL = CHART_PAD.l;
+      const padR = CHART_PAD.r;
+      const cw = rect.width - padL - padR;
+      let idx = Math.round(((x - padL) / cw) * (historyLen - 1));
+      idx = Math.max(0, Math.min(historyLen - 1, idx));
+      chartHover = idx;
+      drawEventChart(chartHover);
+    });
+    eventCanvas.addEventListener("mouseleave", () => {
+      chartHover = null;
+      drawEventChart();
+    });
+
+    window.addEventListener("resize", () => {
+      resizeCanvas();
+      drawEventChart(chartHover);
+      drawMiniChart();
+    });
+
+    setupHypeMarquee();
+    setupCrowdPulse();
+    renderLegend();
+    renderContracts();
+    setupMiniChartHover();
+    renderHot24List();
+    updateCalc();
+    tickSnLine();
+    resizeCanvas();
+    drawEventChart();
+    for (let i = 0; i < 5; i++) pushBubble();
+    setupHotTrades();
+
+    setInterval(tickOdds, 1000);
+    setInterval(pushBubble, 1400);
+    setInterval(tickVolume, 800);
+    setInterval(() => {
+      if (openContractId && miniView === "orderbook") renderOrderbook(openContractId);
+    }, 900);
+    setInterval(tickSnLine, 2800);
+  </script>
+</body>
+</html>
