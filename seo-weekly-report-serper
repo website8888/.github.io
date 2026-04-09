@@ -1,0 +1,3769 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SEO 数据分析工具（Serper 联网）| moomoo.com</title>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .main-card {
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .upload-section {
+            border: 3px dashed #667eea;
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 30px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .upload-section:hover {
+            border-color: #764ba2;
+            background: #f8f9ff;
+        }
+
+        .upload-section.dragover {
+            background: #e8ebff;
+            border-color: #764ba2;
+        }
+
+        .upload-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+        }
+
+        .upload-section h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .upload-section p {
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 32px;
+            font-size: 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .progress-section {
+            display: none;
+            margin-top: 30px;
+        }
+
+        .progress-section.active {
+            display: block;
+        }
+
+        .progress-item {
+            background: #f8f9ff;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-item.completed {
+            background: #e6f7e6;
+        }
+
+        .progress-item.processing {
+            background: #fff4e6;
+        }
+
+        .progress-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .progress-title {
+            font-weight: 600;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .progress-status {
+            font-size: 0.9rem;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-weight: 500;
+        }
+
+        .status-pending {
+            background: #e0e0e0;
+            color: #666;
+        }
+
+        .status-processing {
+            background: #fff4e6;
+            color: #f59e0b;
+        }
+
+        .status-completed {
+            background: #d1fae5;
+            color: #059669;
+        }
+
+        .progress-bar {
+            height: 6px;
+            background: #e0e0e0;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        .progress-description {
+            color: #666;
+            font-size: 0.9rem;
+            margin-top: 8px;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .result-section {
+            display: none;
+            margin-top: 30px;
+        }
+
+        .result-section.active {
+            display: block;
+        }
+
+        .result-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: #fff;
+            padding-top: 8px;
+            padding-bottom: 10px;
+            box-shadow: 0 6px 16px -8px rgba(0, 0, 0, 0.1);
+        }
+
+        .tab-button {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            color: #666;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .tab-button:hover {
+            color: #667eea;
+        }
+
+        .tab-button.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+            font-weight: 600;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .json-output {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .report-plain-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .report-plain-toolbar .report-plain-hint {
+            color: #666;
+            font-size: 0.92rem;
+            line-height: 1.4;
+        }
+
+        .btn-link-copy {
+            background: none;
+            border: none;
+            color: #667eea;
+            cursor: pointer;
+            font-size: 0.95rem;
+            text-decoration: underline;
+            padding: 4px 2px;
+            flex-shrink: 0;
+        }
+
+        .btn-link-copy:hover {
+            color: #764ba2;
+        }
+
+        .btn-link-copy:disabled {
+            color: #aaa;
+            cursor: not-allowed;
+            text-decoration: none;
+        }
+
+        .hotspot-2b-panel {
+            margin-bottom: 14px;
+            padding: 12px 14px;
+            background: #f8f9ff;
+            border: 1px solid #e0e4ff;
+            border-radius: 8px;
+            font-size: 0.92rem;
+        }
+
+        .hotspot-2b-panel summary {
+            cursor: pointer;
+            color: #555;
+            font-weight: 600;
+        }
+
+        .hotspot-2b-panel textarea {
+            width: 100%;
+            margin-top: 10px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-family: ui-monospace, 'Courier New', monospace;
+            font-size: 0.85rem;
+            line-height: 1.45;
+            resize: vertical;
+            min-height: 120px;
+            box-sizing: border-box;
+        }
+
+        .hotspot-2b-actions {
+            margin-top: 8px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .hotspot-2b-actions .hint-inline {
+            color: #666;
+            font-size: 0.88rem;
+        }
+
+        .markdown-output {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+            max-width: 100%;
+            overflow-x: auto;
+            box-sizing: border-box;
+        }
+
+        .markdown-output h1 {
+            color: #333;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        .markdown-output h2 {
+            color: #667eea;
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+
+        .markdown-output h3 {
+            color: #555;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+
+        .markdown-output h4 {
+            color: #444;
+            margin-top: 16px;
+            margin-bottom: 10px;
+            font-size: 1.05rem;
+        }
+
+        /* 默认表格：不套用「排名列 / 数值列」规则，避免与 §2b 三列表等冲突 */
+        .markdown-output table {
+            width: 100%;
+            max-width: 100%;
+            table-layout: auto;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        .markdown-output th,
+        .markdown-output td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+            vertical-align: top;
+            overflow-wrap: anywhere;
+            word-break: break-word;
+        }
+
+        /* 关键词概览三列表：排名 | 关键词 | 点击变化（由 buildKeywordTableMarkdown 输出 class） */
+        .markdown-output table.md-table-rank-kw {
+            table-layout: fixed;
+        }
+
+        .markdown-output table.md-table-rank-kw th:first-child,
+        .markdown-output table.md-table-rank-kw td:first-child {
+            width: 3.25rem;
+            white-space: nowrap;
+        }
+
+        .markdown-output table.md-table-rank-kw th:nth-child(2),
+        .markdown-output table.md-table-rank-kw td:nth-child(2) {
+            min-width: 0;
+            max-width: 40%;
+            word-break: break-all;
+            overflow-wrap: anywhere;
+        }
+
+        .markdown-output table.md-table-rank-kw th:nth-child(3),
+        .markdown-output table.md-table-rank-kw td:nth-child(3) {
+            width: 12%;
+            white-space: nowrap;
+        }
+
+        /* 落地页五列表 */
+        .markdown-output table.md-table-landing {
+            table-layout: fixed;
+        }
+
+        .markdown-output table.md-table-landing th:first-child,
+        .markdown-output table.md-table-landing td:first-child {
+            width: 3.25rem;
+            white-space: nowrap;
+        }
+
+        .markdown-output table.md-table-landing th:nth-child(2),
+        .markdown-output table.md-table-landing td:nth-child(2) {
+            min-width: 0;
+            max-width: 40%;
+            word-break: break-all;
+            overflow-wrap: anywhere;
+        }
+
+        .markdown-output table.md-table-landing th:nth-child(n+3),
+        .markdown-output table.md-table-landing td:nth-child(n+3) {
+            width: 12%;
+            white-space: nowrap;
+        }
+
+        /* 热点与上升原因归纳三列表：首列是关键词+差值，第三列为长摘要 */
+        .markdown-output table.md-table-hotspot-2b {
+            table-layout: auto;
+        }
+
+        .markdown-output table.md-table-hotspot-2b th:nth-child(1),
+        .markdown-output table.md-table-hotspot-2b td:nth-child(1) {
+            width: 20%;
+            min-width: 9rem;
+            white-space: normal;
+        }
+
+        .markdown-output table.md-table-hotspot-2b th:nth-child(2),
+        .markdown-output table.md-table-hotspot-2b td:nth-child(2) {
+            width: 26%;
+            min-width: 8rem;
+            max-width: none;
+            white-space: normal;
+            word-break: break-word;
+        }
+
+        .markdown-output table.md-table-hotspot-2b th:nth-child(3),
+        .markdown-output table.md-table-hotspot-2b td:nth-child(3) {
+            width: auto;
+            min-width: 0;
+            white-space: normal;
+        }
+
+        /* 长短期运营方案 6 列表：第 3 列「建议怎么做」偏宽，第 6 列「事实依据」收窄 */
+        .markdown-output table.md-table-strategy-ops {
+            table-layout: fixed;
+            width: 100%;
+        }
+
+        .markdown-output table.md-table-strategy-ops th:nth-child(1),
+        .markdown-output table.md-table-strategy-ops td:nth-child(1) {
+            width: 10%;
+            min-width: 5.5rem;
+            white-space: normal;
+            word-break: break-word;
+        }
+
+        .markdown-output table.md-table-strategy-ops th:nth-child(2),
+        .markdown-output table.md-table-strategy-ops td:nth-child(2) {
+            width: 12%;
+            min-width: 6rem;
+            white-space: normal;
+            word-break: break-word;
+        }
+
+        .markdown-output table.md-table-strategy-ops th:nth-child(3),
+        .markdown-output table.md-table-strategy-ops td:nth-child(3) {
+            width: 32%;
+            min-width: 12rem;
+            white-space: normal;
+            word-break: break-word;
+        }
+
+        .markdown-output table.md-table-strategy-ops th:nth-child(4),
+        .markdown-output table.md-table-strategy-ops td:nth-child(4),
+        .markdown-output table.md-table-strategy-ops th:nth-child(5),
+        .markdown-output table.md-table-strategy-ops td:nth-child(5) {
+            width: 12%;
+            min-width: 5.5rem;
+            white-space: normal;
+            word-break: break-word;
+        }
+
+        .markdown-output table.md-table-strategy-ops th:nth-child(6),
+        .markdown-output table.md-table-strategy-ops td:nth-child(6) {
+            width: 10%;
+            max-width: 9rem;
+            min-width: 4rem;
+            white-space: normal;
+            word-break: break-word;
+        }
+
+        /* Cursor 长短期 6 列运营表（粘贴的 Markdown 渲染） */
+        .markdown-output table:has(tr > *:nth-child(6)) {
+            table-layout: auto;
+            font-size: 0.88rem;
+        }
+
+        .markdown-output table:has(tr > *:nth-child(6)) th,
+        .markdown-output table:has(tr > *:nth-child(6)) td {
+            white-space: normal;
+            word-break: break-word;
+        }
+
+        .markdown-output th {
+            background: #667eea;
+            color: white;
+        }
+
+        .markdown-output tr:nth-child(even) {
+            background: #f8f9ff;
+        }
+
+        .markdown-output code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .markdown-output pre {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+
+        .markdown-output ul,
+        .markdown-output ol {
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+
+        .markdown-output li {
+            margin-bottom: 8px;
+        }
+
+        .download-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn-secondary {
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+            padding: 10px 24px;
+            font-size: 0.95rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-secondary:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .error-message {
+            background: #fee;
+            color: #c00;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border-left: 4px solid #c00;
+        }
+
+        .file-info {
+            background: #f0f9ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            display: none;
+        }
+
+        .file-info.active {
+            display: block;
+        }
+
+        .file-info-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+        }
+
+        .file-info-label {
+            color: #666;
+            font-weight: 500;
+        }
+
+        .file-info-value {
+            color: #333;
+        }
+
+        .screenshot-section {
+            border: 3px dashed #38bdf8;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            background: #f0f9ff;
+            transition: background 0.2s, border-color 0.2s;
+        }
+
+        .screenshot-section:focus-within,
+        .screenshot-section.paste-focus {
+            background: #e0f2fe;
+            border-color: #0ea5e9;
+        }
+
+        .screenshot-section h3 {
+            color: #0c4a6e;
+            margin-bottom: 8px;
+            font-size: 1.1rem;
+        }
+
+        .screenshot-section .hint {
+            color: #64748b;
+            font-size: 0.9rem;
+            margin-bottom: 16px;
+            line-height: 1.5;
+        }
+
+        .screenshot-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .screenshot-preview-wrap {
+            display: none;
+            margin-top: 12px;
+        }
+
+        .screenshot-preview-wrap.active {
+            display: block;
+        }
+
+        .screenshot-preview-wrap img {
+            max-width: 100%;
+            max-height: 280px;
+            border-radius: 8px;
+            border: 1px solid #cbd5e1;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+
+        .ocr-status {
+            font-size: 0.9rem;
+            color: #0369a1;
+            margin-top: 8px;
+            min-height: 1.4em;
+        }
+
+        .ocr-status.error {
+            color: #b91c1c;
+        }
+
+        .gsc-extract-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 16px;
+            font-size: 0.92rem;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+        }
+
+        .gsc-extract-table th,
+        .gsc-extract-table td {
+            border: 1px solid #e2e8f0;
+            padding: 10px 12px;
+            text-align: left;
+        }
+
+        .gsc-extract-table th {
+            background: #0ea5e9;
+            color: white;
+            font-weight: 600;
+        }
+
+        .gsc-extract-table tr:nth-child(even) td {
+            background: #f8fafc;
+        }
+
+        .gsc-extract-table .muted {
+            color: #94a3b8;
+        }
+
+        .gsc-extract-panel {
+            display: none;
+        }
+
+        .gsc-extract-panel.active {
+            display: block;
+        }
+
+        .gsc-extract-table input.gsc-cell {
+            width: 100%;
+            min-width: 0;
+            padding: 6px 8px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            background: #fff;
+            box-sizing: border-box;
+        }
+
+        .gsc-extract-table input.gsc-cell:focus {
+            outline: none;
+            border-color: #0ea5e9;
+            box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.2);
+        }
+
+        .serper-section {
+            border: 2px solid #a78bfa;
+            border-radius: 12px;
+            padding: 20px 24px;
+            margin-bottom: 24px;
+            background: linear-gradient(180deg, #faf5ff 0%, #f5f3ff 100%);
+        }
+
+        .serper-section h3 {
+            color: #5b21b6;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+
+        .serper-section .hint {
+            color: #6b7280;
+            font-size: 0.88rem;
+            line-height: 1.55;
+            margin-bottom: 14px;
+        }
+
+        .serper-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px 20px;
+            align-items: center;
+        }
+
+        @media (max-width: 640px) {
+            .serper-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .serper-grid label {
+            font-size: 0.9rem;
+            color: #4b5563;
+            font-weight: 500;
+        }
+
+        .serper-grid input[type="text"],
+        .serper-grid input[type="password"],
+        .serper-grid input[type="number"],
+        .serper-grid select {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid #d8b4fe;
+            border-radius: 8px;
+            font-size: 0.95rem;
+        }
+
+        .serper-grid .full-row {
+            grid-column: 1 / -1;
+        }
+
+        .serper-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            color: #4b5563;
+        }
+
+        .serper-cache-status {
+            grid-column: 1 / -1;
+            padding: 10px 12px;
+            background: #eef2ff;
+            border: 1px solid #c7d2fe;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            color: #4338ca;
+            line-height: 1.5;
+        }
+
+        .serper-cache-actions {
+            grid-column: 1 / -1;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .serper-cache-actions .btn-secondary {
+            padding: 8px 14px;
+            font-size: 0.88rem;
+        }
+
+        details.serper-detail {
+            margin-bottom: 10px;
+            border: 1px solid #e9d5ff;
+            border-radius: 8px;
+            background: #fafafa;
+            overflow: hidden;
+        }
+
+        details.serper-detail summary {
+            cursor: pointer;
+            padding: 10px 14px;
+            font-weight: 600;
+            color: #5b21b6;
+            list-style: none;
+        }
+
+        details.serper-detail summary::-webkit-details-marker {
+            display: none;
+        }
+
+        details.serper-detail pre {
+            margin: 0;
+            padding: 12px 14px;
+            font-size: 0.8rem;
+            max-height: 320px;
+            overflow: auto;
+        }
+
+        #serperTab .json-output {
+            max-height: 70vh;
+            overflow: auto;
+        }
+
+        .cursor-bundle-wrap {
+            margin-top: 8px;
+        }
+
+        .cursor-bundle-wrap .hint {
+            color: #64748b;
+            font-size: 0.92rem;
+            line-height: 1.55;
+            margin-bottom: 12px;
+        }
+
+        #cursorBundleText {
+            width: 100%;
+            padding: 14px;
+            font-family: ui-monospace, 'Courier New', monospace;
+            font-size: 0.82rem;
+            line-height: 1.5;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            resize: vertical;
+            background: #fafafa;
+            min-height: 280px;
+        }
+
+        #combinedAppendixPaste {
+            min-height: 180px;
+        }
+
+        @media (max-width: 768px) {
+            .main-card {
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 1.8rem;
+            }
+
+            .result-tabs {
+                flex-direction: column;
+            }
+
+            .tab-button {
+                text-align: left;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 SEO 数据分析工具（Serper）</h1>
+            <p>moomoo.com 搜索表现周报 · 异动词联网检索（独立于旧版单文件工具）</p>
+        </div>
+
+        <div class="main-card">
+            <!-- GSC 截图：识别总点击、展示、CTR -->
+            <div class="screenshot-section" id="screenshotSection" tabindex="0" aria-label="粘贴或上传 Search Console 截图">
+                <h3>📷 GSC 表现截图（可选但推荐）</h3>
+                <p class="hint">从 Google Search Console 截取「Total clicks / Total impressions / Average CTR」<strong>三卡片并排区域</strong>（支持中英文界面），<strong>Ctrl+V 粘贴</strong>或选择图片。按<strong>左=点击、中=展示、右=CTR</strong>分三列识别；<strong>本周期/上一周期</strong>按日期<strong>由近到远</strong>自动对齐（与卡片上下顺序无关）。识别后可在下表<strong>手动修改</strong>再继续分析。支持「万」等单位。</p>
+                <div class="screenshot-toolbar">
+                    <button type="button" class="btn-primary" id="pickScreenshotBtn" style="background: linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%);">
+                        选择截图文件
+                    </button>
+                    <input type="file" id="screenshotInput" accept="image/*" hidden>
+                    <button type="button" class="btn-secondary" id="clearScreenshotBtn" style="display:none;">清除截图</button>
+                </div>
+                <div class="screenshot-preview-wrap" id="screenshotPreviewWrap">
+                    <img id="screenshotPreview" alt="GSC 截图预览">
+                </div>
+                <p class="ocr-status" id="ocrStatus"></p>
+                <div class="gsc-extract-panel" id="gscExtractPanel">
+                    <table class="gsc-extract-table">
+                        <thead>
+                            <tr>
+                                <th>周期</th>
+                                <th>Total clicks</th>
+                                <th>Impressions</th>
+                                <th>Average CTR</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td id="gscRowPrevLabel">上一周期</td>
+                                <td><input type="text" class="gsc-cell" id="gscPrevClk" autocomplete="off" placeholder="—"></td>
+                                <td><input type="text" class="gsc-cell" id="gscPrevImp" autocomplete="off" placeholder="—"></td>
+                                <td><input type="text" class="gsc-cell" id="gscPrevCtr" autocomplete="off" placeholder="—"></td>
+                            </tr>
+                            <tr>
+                                <td id="gscRowCurrLabel">本周期</td>
+                                <td><input type="text" class="gsc-cell" id="gscCurrClk" autocomplete="off" placeholder="—"></td>
+                                <td><input type="text" class="gsc-cell" id="gscCurrImp" autocomplete="off" placeholder="—"></td>
+                                <td><input type="text" class="gsc-cell" id="gscCurrCtr" autocomplete="off" placeholder="—"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <p class="hint" style="margin-top:10px;font-size:0.85rem;">表格可直接编辑；若 OCR 有误，请对照截图改正后再点「开始分析」。</p>
+                </div>
+            </div>
+
+            <!-- 上传区域 -->
+            <div class="upload-section" id="uploadSection">
+                <div class="upload-icon">📁</div>
+                <h3>上传数据文件</h3>
+                <p>支持 Excel (.xlsx, .xls) 或 CSV 格式<br>拖拽文件到此处或点击选择<br><span style="font-size:0.9rem;color:#64748b;">关键词表在<strong>第一个工作表</strong>；若有<strong>第二个工作表</strong>，将按相同列结构解析为<strong>落地页</strong>（用于报告「落地页概览」）。</span></p>
+                <input type="file" id="fileInput" accept=".xlsx,.xls,.csv">
+                <button class="btn-primary" type="button" onclick="document.getElementById('fileInput').click()">
+                    选择文件
+                </button>
+            </div>
+
+            <!-- 文件信息 -->
+            <div class="file-info" id="fileInfo">
+                <div class="file-info-item">
+                    <span class="file-info-label">文件名：</span>
+                    <span class="file-info-value" id="fileName">-</span>
+                </div>
+                <div class="file-info-item">
+                    <span class="file-info-label">文件大小：</span>
+                    <span class="file-info-value" id="fileSize">-</span>
+                </div>
+                <div class="file-info-item">
+                    <span class="file-info-label">数据行数：</span>
+                    <span class="file-info-value" id="rowCount">-</span>
+                </div>
+            </div>
+
+            <!-- Serper：密钥不落盘，仅本次页面会话使用 -->
+            <div class="serper-section" id="serperSection">
+                <h3>🔎 Serper 联网检索（可选）</h3>
+                <p class="hint">对<strong>非品牌词</strong>中<strong>点击增长量最大</strong>的前 X 个词检索（X = 下方「最多检索关键词数」）；每条 1 次 Serper，query 聚焦<strong>该词搜索上升背后的热点与原因</strong>（ニュース/トレンド/背景等）。API Key 仅本地填写；CORS 请用 <code>serper-proxy.mjs</code>。</p>
+                <div class="serper-grid">
+                    <label for="serperApiKey">Serper API Key</label>
+                    <input type="password" id="serperApiKey" placeholder="必填则启用步骤 2" autocomplete="off">
+                    <label for="serperProxyUrl">代理地址（可选）</label>
+                    <input type="text" id="serperProxyUrl" placeholder="留空则直连 https://google.serper.dev/search">
+                    <label for="serperMaxKw">最多检索关键词数（省积分）</label>
+                    <input type="number" id="serperMaxKw" min="1" max="30" value="10">
+                    <label for="serperGl">地区 gl</label>
+                    <input type="text" id="serperGl" value="jp" maxlength="8">
+                    <label for="serperHl">语言 hl</label>
+                    <input type="text" id="serperHl" value="ja" maxlength="8">
+                    <div class="full-row serper-checkbox">
+                        <input type="checkbox" id="serperSkip" onchange="syncSerperCacheControls()">
+                        <label for="serperSkip">跳过 Serper（仅本地分析，与旧版行为一致）</label>
+                    </div>
+                    <div class="full-row serper-checkbox">
+                        <input type="checkbox" id="serperMarketTrend" checked>
+                        <label for="serperMarketTrend">额外 1 次泛检索（日本在线证券·竞品 LP/广告/比較，计 1 次积分）</label>
+                    </div>
+                    <div class="serper-cache-status" id="serperCacheStatus">
+                        正在读取本地缓存信息…
+                    </div>
+                    <div class="full-row serper-checkbox">
+                        <input type="checkbox" id="serperUseCache">
+                        <label for="serperUseCache">使用上次缓存的 Serper 结果（不发起联网请求，节省积分；需与当前关键词与下方选项一致）</label>
+                    </div>
+                    <div class="serper-cache-actions">
+                        <button type="button" class="btn-secondary" id="serperClearCacheBtn" onclick="clearSerperCache()">清除 Serper 缓存</button>
+                        <span class="hint" style="margin:0;font-size:0.85rem;">完整跑过一次联网检索后会自动写入缓存。若勾选「使用缓存」：仅<strong>关键词列表 + 最多检索数</strong>需与缓存一致即可命中；<strong>仅改变泛检索勾选</strong>时仍会复用已缓存的关键词结果（不重复扣关键词检索积分）。若改 Excel 或改「最多检索关键词数」导致选词变化，则需重新联网或取消「使用缓存」。</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 处理按钮 -->
+            <div style="text-align: center; margin-top: 20px;">
+                <button class="btn-primary" type="button" id="processBtn" onclick="startProcessing()" disabled>
+                    开始分析
+                </button>
+            </div>
+
+            <!-- 进度区域 -->
+            <div class="progress-section" id="progressSection">
+                <div class="progress-item" id="progress1">
+                    <div class="progress-header">
+                        <div class="progress-title">
+                            <span id="icon1">⏳</span>
+                            <span>步骤 1：数据提取与分析</span>
+                        </div>
+                        <span class="progress-status status-pending" id="status1">等待中</span>
+                    </div>
+                    <div class="progress-description" id="desc1">
+                        提取关键词数据，计算涨跌幅，分类品牌词与非品牌词
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-bar-fill" id="bar1"></div>
+                    </div>
+                </div>
+
+                <div class="progress-item" id="progress2">
+                    <div class="progress-header">
+                        <div class="progress-title">
+                            <span id="icon2">⏳</span>
+                            <span>步骤 2：Serper 检索（点击增长 Top 词 + 热点原因）</span>
+                        </div>
+                        <span class="progress-status status-pending" id="status2">等待中</span>
+                    </div>
+                    <div class="progress-description" id="desc2">
+                        对点击增长最多的非品牌词检索站外热点与新闻语境
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-bar-fill" id="bar2"></div>
+                    </div>
+                </div>
+
+                <div class="progress-item" id="progress3">
+                    <div class="progress-header">
+                        <div class="progress-title">
+                            <span id="icon3">⏳</span>
+                            <span>步骤 3：生成 SEO 周报</span>
+                        </div>
+                        <span class="progress-status status-pending" id="status3">等待中</span>
+                    </div>
+                    <div class="progress-description" id="desc3">
+                        合并检索事实与本地指标，生成中英文报告
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-bar-fill" id="bar3"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 结果区域 -->
+            <div class="result-section" id="resultSection">
+                <div class="result-tabs">
+                    <button type="button" class="tab-button active" onclick="switchTab('report', this)">📄 完整报告</button>
+                    <button type="button" class="tab-button" onclick="switchTab('serper', this)">🔎 Serper 原始</button>
+                    <button type="button" class="tab-button" onclick="switchTab('cursor', this)">📋 Cursor 分析包</button>
+                    <button type="button" class="tab-button" onclick="switchTab('json', this)">💾 JSON 数据</button>
+                </div>
+
+                <div class="tab-content active" id="reportTab">
+                    <div class="report-plain-toolbar">
+                        <span class="report-plain-hint">下方为 Markdown 表格便于阅读；汇报需「关键词 | 变化」列表格式时点「复制文本」。</span>
+                        <button type="button" class="btn-link-copy" onclick="copyReportPlainText()">复制文本</button>
+                    </div>
+                    <details class="hotspot-2b-panel" id="combinedAppendixPanel">
+                        <summary>Cursor 附录回填（附录 A + B/C 一次粘贴）</summary>
+                        <p class="hint-inline" style="margin-top:8px;color:#666;">将 Cursor 对话末尾的<strong>完整附录</strong>（或工具生成的「附录 · Markdown 表格」整段，含 <code>### 附录 A</code> / <code>### 附录 B</code> / <code>### 附录 C</code>）粘贴到下方；支持外层 <code>```markdown</code> 代码块。点击「应用到报告」将<strong>自动拆分</strong>并填入「数据洞察 → 热点与上升原因归纳」与「策略建议 → Cursor 长短期运营方案」。支持 <code>|</code> 表格或制表符文本（将规范为 Markdown）。</p>
+                        <textarea id="combinedAppendixPaste" placeholder="粘贴完整附录 Markdown…"></textarea>
+                        <div class="hotspot-2b-actions">
+                            <button type="button" class="btn-secondary" onclick="applyCombinedAppendixToReport()">应用到报告</button>
+                            <span class="hint-inline">留空并应用：清除上述两处的自定义内容，恢复为 Serper 自动三列表与通用策略建议。</span>
+                        </div>
+                    </details>
+                    <div class="markdown-output" id="markdownOutput"></div>
+                    <div class="download-buttons">
+                        <button type="button" class="btn-secondary" onclick="downloadMarkdown()">
+                            ⬇️ 下载 Markdown
+                        </button>
+                        <button type="button" class="btn-secondary" onclick="downloadHTML()">
+                            ⬇️ 下载 HTML
+                        </button>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="serperTab">
+                    <p style="color:#666;margin-bottom:12px;font-size:0.95rem;">以下为每次请求的返回 JSON，可展开查看；未启用 Serper 时为空。</p>
+                    <div id="serperRawPanel"></div>
+                </div>
+
+                <div class="tab-content" id="cursorTab">
+                    <div class="cursor-bundle-wrap">
+                        <p class="hint">本页为 <strong>Cursor 人工分析</strong> 专用：已汇总本地指标 + Serper 摘录 + 任务说明。点击「复制全文 Markdown」粘贴到 Cursor；文末 <strong>附录</strong>含 2b 三列表与长短期 6 列表骨架（关键词列预填）。在 Cursor 补全后，将<strong>完整附录</strong>一次性粘贴到「完整报告」顶部的「Cursor 附录回填」并应用即可。</p>
+                        <label for="cursorBundleText" style="display:block;font-weight:600;margin-top:12px;color:#334155;">全文（第 1～3 节 + 附录）</label>
+                        <textarea id="cursorBundleText" readonly placeholder="请先完成「开始分析」…"></textarea>
+                        <div class="download-buttons" style="margin-top:14px;">
+                            <button type="button" class="btn-secondary" onclick="copyCursorBundle()">📋 复制全文 Markdown</button>
+                            <button type="button" class="btn-secondary" onclick="downloadCursorBundle()">⬇️ 下载 cursor_bundle.md</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="jsonTab">
+                    <div class="json-output" id="jsonOutput"></div>
+                    <div class="download-buttons">
+                        <button type="button" class="btn-secondary" onclick="downloadJSON()">
+                            ⬇️ 下载 JSON
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="errorMessage"></div>
+        </div>
+    </div>
+
+    <script>
+        let processedData = null;
+        let finalReport = '';
+        /** @type {string} */
+        let cursorBundleText = '';
+        let uploadedFile = null;
+        /** @type {null | { prev: object, curr: object, rawOcr: string }} */
+        let gscScreenshotData = null;
+        let screenshotObjectUrl = null;
+
+        const SERPER_DIRECT_URL = 'https://google.serper.dev/search';
+        const SERPER_CACHE_STORAGE_KEY = 'seo_weekly_report_serper_cache_v1';
+
+        // —— Serper ——
+        function getSerperEndpoint() {
+            const u = (document.getElementById('serperProxyUrl').value || '').trim();
+            return u || SERPER_DIRECT_URL;
+        }
+
+        /**
+         * @param {string} apiKey
+         * @param {string} q
+         * @param {{ gl?: string, hl?: string, num?: number }} opts
+         */
+        async function serperSearch(apiKey, q, opts) {
+            const gl = (document.getElementById('serperGl').value || 'jp').trim() || 'jp';
+            const hl = (document.getElementById('serperHl').value || 'ja').trim() || 'ja';
+            const num = opts && opts.num != null ? opts.num : 5;
+            const body = { q, gl, hl, num };
+            const url = getSerperEndpoint();
+            const headers = {
+                'Content-Type': 'application/json',
+                'X-API-KEY': apiKey
+            };
+            const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body) });
+            const text = await res.text();
+            let json;
+            try {
+                json = JSON.parse(text);
+            } catch {
+                json = { _parseError: true, raw: text.slice(0, 4000) };
+            }
+            if (!res.ok) {
+                const err = new Error(json.message || json.error || `Serper HTTP ${res.status}`);
+                err.detail = json;
+                throw err;
+            }
+            return json;
+        }
+
+        /**
+         * 仅取非品牌词中「点击增长 diff」最高的前 maxN 个词（用于 Serper 洞察上升原因）。
+         * @returns {{ keyword: string, direction: 'rise', diff: number }[]}
+         */
+        function pickSerperKeywords(processedData, maxN) {
+            const brandTerms = ['moomoo', 'futu', 'ムームー', '富途'];
+            const raw = (processedData.raw_data || []).filter((row) => {
+                const q = String(row.query || '').toLowerCase();
+                return !brandTerms.some((t) => q.includes(t.toLowerCase()));
+            });
+            const risers = raw.filter((r) => r.diff > 0).sort((a, b) => b.diff - a.diff);
+            const seen = new Set();
+            const out = [];
+            for (let i = 0; i < risers.length && out.length < maxN; i++) {
+                const kw = String(risers[i].query || '').trim();
+                if (!kw || seen.has(kw)) continue;
+                seen.add(kw);
+                out.push({ keyword: risers[i].query, direction: 'rise', diff: risers[i].diff });
+            }
+            return out;
+        }
+
+        /**
+         * 单次 Serper：面向「GSC 点击上升 → 站外热点原因」洞察。
+         * 复合：关键词 + 年份语境 + 新闻/趋势/背景/话题词，避免与「纯竞品 LP」强绑定导致结果发散。
+         */
+        function buildSerperQuery(keyword) {
+            const k = String(keyword).trim();
+            const y = new Date().getFullYear();
+            const hl = (document.getElementById('serperHl').value || 'ja').trim().toLowerCase();
+            if (hl === 'ja' || hl === 'jp') {
+                return `${k} ${y} ニュース トレンド 注目 理由 背景 話題 相場 人気`;
+            }
+            return `${k} ${y} news why trending reason headlines catalyst stock market`;
+        }
+
+        /** 与当前表单选项 + Excel 解析结果绑定，用于判断缓存是否仍适用（diff 取整避免浮点导致指纹不一致） */
+        function computeSerperCacheKey(processedData) {
+            const maxKw = Math.min(30, Math.max(1, parseInt(document.getElementById('serperMaxKw').value, 10) || 10));
+            const includeMarket = document.getElementById('serperMarketTrend').checked;
+            const picked = pickSerperKeywords(processedData, maxKw);
+            return JSON.stringify({
+                maxKw,
+                includeMarket,
+                picked: picked.map((p) => ({
+                    keyword: String(p.keyword || ''),
+                    diff: Math.round(Number(p.diff))
+                }))
+            });
+        }
+
+        /** 宽松匹配：maxKw、泛检索、Serper 关键词顺序与当前 pick 一致即可（兼容旧缓存或 diff 微小差异） */
+        function serperCacheLooseMatch(cached, processedData) {
+            if (!cached || !cached.serper || cached.serper.skipped) return false;
+            const maxKw = Math.min(30, Math.max(1, parseInt(document.getElementById('serperMaxKw').value, 10) || 10));
+            const includeMarket = document.getElementById('serperMarketTrend').checked;
+            const picked = pickSerperKeywords(processedData, maxKw);
+            const meta = cached.meta || {};
+            if (meta.maxKw != null && Number(meta.maxKw) !== maxKw) return false;
+            if (!!meta.includeMarket !== !!includeMarket) return false;
+            return serperCacheKeywordRowsMatch(cached, picked);
+        }
+
+        /**
+         * 仅匹配关键词列与 maxKw（不比较泛检索）。
+         * 避免：缓存时未勾选泛检索、本次勾选后误判为不可用而重新打 API。
+         */
+        function serperCacheLooseMatchIgnoreMarket(cached, processedData) {
+            if (!cached || !cached.serper || cached.serper.skipped) return false;
+            const maxKw = Math.min(30, Math.max(1, parseInt(document.getElementById('serperMaxKw').value, 10) || 10));
+            const picked = pickSerperKeywords(processedData, maxKw);
+            const meta = cached.meta || {};
+            if (meta.maxKw != null && Number(meta.maxKw) !== maxKw) return false;
+            return serperCacheKeywordRowsMatch(cached, picked);
+        }
+
+        function serperCacheKeywordRowsMatch(cached, picked) {
+            const riseEntries = (cached.serper.entries || []).filter((e) => e.direction === 'rise');
+            if (riseEntries.length !== picked.length) return false;
+            for (let i = 0; i < picked.length; i++) {
+                if (String(picked[i].keyword).trim() !== String(riseEntries[i].keyword).trim()) return false;
+            }
+            return true;
+        }
+
+        /** @returns {{ hit: boolean, mode: 'strict'|'loose'|'ignoreMarket'|null }} */
+        function serperCacheMatchesCurrent(cached, processedData) {
+            if (!cached || !cached.serper || cached.serper.skipped) return { hit: false, mode: null };
+            const strict = computeSerperCacheKey(processedData);
+            if (cached.cacheKey && cached.cacheKey === strict) return { hit: true, mode: 'strict' };
+            if (serperCacheLooseMatch(cached, processedData)) return { hit: true, mode: 'loose' };
+            if (serperCacheLooseMatchIgnoreMarket(cached, processedData)) return { hit: true, mode: 'ignoreMarket' };
+            return { hit: false, mode: null };
+        }
+
+        function loadSerperCache() {
+            try {
+                const raw = localStorage.getItem(SERPER_CACHE_STORAGE_KEY);
+                if (!raw) return null;
+                return JSON.parse(raw);
+            } catch {
+                return null;
+            }
+        }
+
+        function saveSerperCache(serperResult, processedData) {
+            if (!serperResult || serperResult.fromCache) return;
+            if (serperResult.skipped) return;
+            const maxKw = Math.min(30, Math.max(1, parseInt(document.getElementById('serperMaxKw').value, 10) || 10));
+            const includeMarket = document.getElementById('serperMarketTrend').checked;
+            const picked = pickSerperKeywords(processedData, maxKw);
+            let apiCalls = 0;
+            if (picked.length > 0) {
+                apiCalls = picked.length + (includeMarket ? 1 : 0);
+            }
+            const cacheKey = computeSerperCacheKey(processedData);
+            const payload = {
+                savedAt: Date.now(),
+                cacheKey,
+                serper: {
+                    entries: serperResult.entries,
+                    marketEntry: serperResult.marketEntry,
+                    skipped: serperResult.skipped,
+                    error: serperResult.error,
+                    noQueries: serperResult.noQueries
+                },
+                meta: {
+                    maxKw,
+                    includeMarket,
+                    keywordCount: picked.length,
+                    apiCalls
+                }
+            };
+            try {
+                localStorage.setItem(SERPER_CACHE_STORAGE_KEY, JSON.stringify(payload));
+            } catch (e) {
+                console.warn('Serper cache save failed', e);
+            }
+            refreshSerperCacheUI();
+        }
+
+        function clearSerperCache() {
+            try {
+                localStorage.removeItem(SERPER_CACHE_STORAGE_KEY);
+            } catch (e) {}
+            refreshSerperCacheUI();
+            alert('已清除本地 Serper 缓存。');
+        }
+
+        function refreshSerperCacheUI() {
+            const el = document.getElementById('serperCacheStatus');
+            if (!el) return;
+            const raw = localStorage.getItem(SERPER_CACHE_STORAGE_KEY);
+            if (!raw) {
+                el.textContent = '暂无本地 Serper 缓存（成功完成一次联网检索后会自动保存，便于调试时复用）。';
+                return;
+            }
+            try {
+                const c = JSON.parse(raw);
+                const d = new Date(c.savedAt);
+                const timeStr = d.toLocaleString('zh-CN', { hour12: false });
+                const kw = c.meta && c.meta.keywordCount != null ? c.meta.keywordCount : ((c.serper && c.serper.entries) ? c.serper.entries.length : 0);
+                const inc = c.meta && c.meta.includeMarket;
+                const api = c.meta && c.meta.apiCalls != null ? c.meta.apiCalls : (kw + (inc ? 1 : 0));
+                const mk = c.meta && c.meta.maxKw != null ? c.meta.maxKw : '—';
+                el.innerHTML = `上次缓存：<strong>${timeStr}</strong> · 当时「最多检索关键词数」<strong>${mk}</strong> · 关键词检索 <strong>${kw}</strong> 次${inc ? ' + 泛检索 <strong>1</strong> 次' : ''} · 合计 Serper 请求约 <strong>${api}</strong> 次`;
+            } catch {
+                el.textContent = '缓存数据损坏，可点击「清除 Serper 缓存」后重新检索。';
+            }
+        }
+
+        function syncSerperCacheControls() {
+            const skip = document.getElementById('serperSkip');
+            const use = document.getElementById('serperUseCache');
+            if (!skip || !use) return;
+            if (skip.checked) {
+                use.checked = false;
+                use.disabled = true;
+            } else {
+                use.disabled = false;
+            }
+        }
+
+        /**
+         * @returns {Promise<{ entries: object[], marketEntry: object|null, skipped: boolean, error: string|null }>}
+         */
+        async function runSerperPipeline(processedData) {
+            const skip = document.getElementById('serperSkip').checked;
+            const apiKey = (document.getElementById('serperApiKey').value || '').trim();
+            const useCacheEl = document.getElementById('serperUseCache');
+            const useCache = useCacheEl && useCacheEl.checked && !skip;
+
+            if (skip) {
+                await updateProgress(2, 'completed', 100, '已跳过 Serper（与旧版一致）✓');
+                return {
+                    entries: [],
+                    marketEntry: null,
+                    skipped: true,
+                    error: null
+                };
+            }
+
+            if (useCache) {
+                const cached = loadSerperCache();
+                const match = serperCacheMatchesCurrent(cached, processedData);
+                if (match.hit && cached.serper) {
+                    const t = new Date(cached.savedAt).toLocaleString('zh-CN', { hour12: false });
+                    const kc = cached.meta && cached.meta.keywordCount != null ? cached.meta.keywordCount : 0;
+                    const inc = cached.meta && cached.meta.includeMarket;
+                    const tag = match.mode === 'loose'
+                        ? '（关键词与选项一致 · 宽松匹配）'
+                        : match.mode === 'ignoreMarket'
+                            ? '（泛检索开关与缓存不一致 · 仍用已缓存关键词结果，不重复请求）'
+                            : '';
+                    await updateProgress(2, 'completed', 100, `已使用本地缓存${tag}（${t} · ${kc} 个关键词${inc ? ' + 泛检索' : ''}）✓`);
+                    return { ...cached.serper, fromCache: true, cacheSavedAt: cached.savedAt };
+                }
+                if (!apiKey) {
+                    await updateProgress(2, 'completed', 100, '已勾选使用缓存，但本地缓存与当前数据不一致，且未填写 API Key，已跳过 Serper ✓');
+                    return {
+                        entries: [],
+                        marketEntry: null,
+                        skipped: true,
+                        error: '缓存与当前关键词/选项不一致，无法使用本地结果；请填写 Serper API Key 后重新联网检索，或取消勾选「使用缓存」。'
+                    };
+                }
+                await updateProgress(2, 'processing', 8, '缓存不可用或与当前数据不一致，正在联网检索…');
+            }
+
+            if (!apiKey) {
+                await updateProgress(2, 'completed', 100, '未填写 API Key，已跳过 Serper ✓');
+                return {
+                    entries: [],
+                    marketEntry: null,
+                    skipped: true,
+                    error: '未填写 Serper API Key，已跳过联网检索'
+                };
+            }
+            const maxKw = Math.min(30, Math.max(1, parseInt(document.getElementById('serperMaxKw').value, 10) || 10));
+            const includeMarket = document.getElementById('serperMarketTrend').checked;
+            const picked = pickSerperKeywords(processedData, maxKw);
+            const entries = [];
+            const delay = (ms) => new Promise((r) => setTimeout(r, ms));
+
+            let idx = 0;
+            const total = picked.length + (includeMarket ? 1 : 0);
+            if (total === 0) {
+                await updateProgress(2, 'completed', 100, '无非品牌「点击增长」词可检索 ✓');
+                const empty = { entries: [], marketEntry: null, skipped: false, noQueries: true, error: null };
+                saveSerperCache(empty, processedData);
+                return empty;
+            }
+            for (const p of picked) {
+                idx++;
+                const q = buildSerperQuery(p.keyword);
+                await updateProgress(2, 'processing', Math.min(99, Math.round((idx / total) * 100)), `Serper ${idx}/${total}：${p.keyword.slice(0, 40)}…`);
+                try {
+                    const json = await serperSearch(apiKey, q, { num: 7 });
+                    entries.push({
+                        keyword: p.keyword,
+                        direction: p.direction,
+                        diff: p.diff,
+                        query: q,
+                        ok: true,
+                        response: json
+                    });
+                } catch (e) {
+                    entries.push({
+                        keyword: p.keyword,
+                        direction: p.direction,
+                        diff: p.diff,
+                        query: q,
+                        ok: false,
+                        error: e.message || String(e),
+                        response: e.detail || null
+                    });
+                }
+                await delay(350);
+            }
+
+            let marketEntry = null;
+            if (includeMarket) {
+                idx++;
+                const mq = `日本株 米国株 マーケット ${new Date().getFullYear()} ニュース トレンド 注目 イベント 相場`;
+                await updateProgress(2, 'processing', 99, `Serper ${idx}/${total}：市场热点泛检索…`);
+                try {
+                    const json = await serperSearch(apiKey, mq, { num: 8 });
+                    marketEntry = { query: mq, ok: true, response: json };
+                } catch (e) {
+                    marketEntry = { query: mq, ok: false, error: e.message || String(e), response: e.detail || null };
+                }
+            }
+
+            await updateProgress(2, 'completed', 100, `Serper 完成（${entries.filter((e) => e.ok).length}/${entries.length} 条关键词成功）✓`);
+            const serperDone = { entries, marketEntry, skipped: false, error: null };
+            saveSerperCache(serperDone, processedData);
+            return serperDone;
+        }
+
+        function resetProgressUI() {
+            for (let s = 1; s <= 3; s++) {
+                const progressItem = document.getElementById(`progress${s}`);
+                const icon = document.getElementById(`icon${s}`);
+                const statusEl = document.getElementById(`status${s}`);
+                const desc = document.getElementById(`desc${s}`);
+                const bar = document.getElementById(`bar${s}`);
+                icon.textContent = '⏳';
+                progressItem.classList.remove('processing', 'completed');
+                statusEl.className = 'progress-status status-pending';
+                statusEl.textContent = '等待中';
+                bar.style.width = '0%';
+                if (s === 1) desc.textContent = '提取关键词数据，计算涨跌幅，分类品牌词与非品牌词';
+                if (s === 2) desc.textContent = '对点击增长 Top 词检索站外热点（Serper）';
+                if (s === 3) desc.textContent = '合并检索事实与本地指标，生成中英文报告';
+            }
+        }
+
+        // —— GSC 截图 OCR ——
+        function normalizeOcrText(t) {
+            return String(t || '')
+                .replace(/\r/g, '\n')
+                .replace(/,/g, '.')
+                .replace(/[Oo](?=\d)/g, '0');
+        }
+
+        function parseCompactNumber(s) {
+            if (s == null || s === '') return NaN;
+            const str = String(s).trim();
+            if (/[万萬]/.test(str)) {
+                const n = parseFloat(str.replace(/[,，]/g, '').replace(/[万萬]/g, ''));
+                if (!isNaN(n)) return n * 1e4;
+            }
+            const m = str.match(/^([\d.]+)\s*([KkMm])?/i);
+            if (!m) return parseFloat(str.replace(/%/g, '')) || NaN;
+            let n = parseFloat(m[1]);
+            const u = (m[2] || '').toUpperCase();
+            if (u === 'K') n *= 1e3;
+            if (u === 'M') n *= 1e6;
+            return n;
+        }
+
+        /** 从 GSC 日期区间字符串取结束日时间戳，用于判断本周期/上一周期 */
+        function dateRangeEndMs(dateRangeStr) {
+            if (!dateRangeStr) return 0;
+            const s = String(dateRangeStr).trim();
+            const parts = s.split(/\s*[-–~～]\s*/);
+            const last = parts[parts.length - 1] || s;
+            let y; let mo; let d;
+            const m4 = last.match(/(\d{4})[\/\-.年](\d{1,2})[\/\-.月](\d{1,2})/);
+            if (m4) {
+                y = +m4[1]; mo = +m4[2]; d = +m4[3];
+            } else {
+                const m2 = last.match(/(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/);
+                if (!m2) return 0;
+                mo = +m2[1]; d = +m2[2]; y = +m2[3];
+                if (y < 100) y += y >= 70 ? 1900 : 2000;
+            }
+            const t = new Date(y, mo - 1, d).getTime();
+            return isNaN(t) ? 0 : t;
+        }
+
+        /**
+         * 按日期结束远近：较早区间为「上一周期」，较晚为「本周期」（与截图中上下顺序无关）。
+         */
+        function normalizeGscPeriodOrder(parsed) {
+            const a = parsed.prev;
+            const b = parsed.curr;
+            const endA = dateRangeEndMs(a.dateRange);
+            const endB = dateRangeEndMs(b.dateRange);
+            if (endA && endB && endA > endB) {
+                return { prev: b, curr: a, rawOcr: parsed.rawOcr, parseOk: parsed.parseOk };
+            }
+            if (endA && endB && endA < endB) {
+                return parsed;
+            }
+            return parsed;
+        }
+
+        function extractImpressionsPairFromMiddleColumn(colText) {
+            if (!colText || !String(colText).trim()) return [];
+            const t = normalizeOcrText(colText);
+            const wan = t.match(/\d+\.?\d*\s*[万萬]/g);
+            if (wan && wan.length >= 2) {
+                return wan.slice(0, 2).map((x) => String(x).replace(/\s+/g, ''));
+            }
+            let mm = t.match(/\d+\.?\d*\s*[Mm]/g) || [];
+            if (mm.length < 2) mm = t.match(/\d+\.?\d*\s*[Kk]/g) || [];
+            if (mm.length >= 2) {
+                return mm.slice(0, 2).map((s) => {
+                    const x = s.replace(/\s+/g, '');
+                    if (/m/i.test(x)) return x.replace(/m/i, 'M');
+                    return x.replace(/k/i, 'K');
+                });
+            }
+            return [];
+        }
+
+        function extractAllGscDateRanges(text) {
+            const out = [];
+            const t = String(text || '');
+            let m;
+            const re1 = /\d{4}\/\d{1,2}\/\d{1,2}\s*[-–~～]\s*\d{4}\/\d{1,2}\/\d{1,2}/g;
+            while ((m = re1.exec(t)) !== null) out.push(m[0]);
+            if (out.length >= 2) return out;
+            const re2 = /\d{1,2}\/\d{1,2}\/\d{2}\s*-\s*\d{1,2}\/\d{1,2}\/\d{2}/g;
+            while ((m = re2.exec(t)) !== null) out.push(m[0]);
+            return out;
+        }
+
+        function formatTrendDisplay(currStr, prevStr) {
+            const curr = parseCompactNumber(currStr);
+            const prev = parseCompactNumber(prevStr);
+            const cs = (currStr || '—').trim();
+            if (!isFinite(curr) || !isFinite(prev)) return `${cs} (—)`;
+            if (prev === 0) return `${cs} (+∞)`;
+            const pct = ((curr - prev) / prev) * 100;
+            const sign = pct > 0 ? '+' : '';
+            return `${cs} (${sign}${pct.toFixed(1)}%)`;
+        }
+
+        function normalizeKToken(s) {
+            return String(s).replace(/\s+/g, '').replace(/[KkXx]$/i, 'K');
+        }
+
+        /**
+         * 提取 Total clicks 两期数值。OCR 常见问题：写成 Total click、K 被漏识别、40.8 与 49.1 无后缀。
+         */
+        function extractGscClicksPair(text, lower) {
+            const clickM = lower.match(/total\s+clicks?/);
+            const clickStart = clickM ? clickM.index : -1;
+            const impM = lower.match(/total\s+impressions/);
+            const impStart = impM ? impM.index : -1;
+            const ctrM = lower.match(/average\s+ctr/);
+            const ctrStart = ctrM ? ctrM.index : -1;
+
+            const tryKInString = (str) => {
+                const km = str.match(/\d+\.?\d*\s*[Kk]/g) || [];
+                return km.slice(0, 2).map(normalizeKToken);
+            };
+
+            // 1) 截取「点击」列：从 Total click(s) 到下一个区块标题（支持 OCR 先印出 Impressions 再 Clicks）
+            let segClick = '';
+            if (clickStart >= 0) {
+                const candidates = [impStart, ctrStart].filter((i) => i > clickStart);
+                const end = candidates.length ? Math.min(...candidates) : text.length;
+                segClick = text.slice(clickStart, end);
+            }
+
+            let pair = tryKInString(segClick);
+            if (pair.length >= 2) return pair;
+
+            // 2) Total click 与 Total impressions 之间的区间（无论谁先出现）
+            if (clickStart >= 0 && impStart >= 0 && clickStart !== impStart) {
+                const a = Math.min(clickStart, impStart);
+                const b = Math.max(clickStart, impStart);
+                pair = tryKInString(text.slice(a, b));
+                if (pair.length >= 2) return pair;
+            }
+
+            // 3) 全文中的 K 数字（展示多为 M，点击多为 K，一般不与 3.xxM 混淆）
+            pair = tryKInString(text);
+            if (pair.length >= 2) return pair;
+
+            // 4) 无 K 后缀：OCR 常识别成「40.8」「49.1」（略去 K）。排除 1.3% 类 CTR 与 3.xx（百万展示的误截断）
+            const tryDecimalThousands = (str) => {
+                const matches = str.match(/\b(\d{1,3}\.\d+)\b/g) || [];
+                const nums = matches
+                    .map((x) => parseFloat(x))
+                    .filter((n) => {
+                        if (n >= 2.4 && n <= 4.2) return false;
+                        return n >= 1.5 && n <= 500;
+                    });
+                if (nums.length < 2) return [];
+                return nums.slice(0, 2).map((n) => n.toFixed(1).replace(/\.0$/, '') + 'K');
+            };
+
+            if (segClick) {
+                pair = tryDecimalThousands(segClick);
+                if (pair.length >= 2) return pair;
+            }
+            if (clickStart >= 0 && impStart >= 0) {
+                const a = Math.min(clickStart, impStart);
+                const b = Math.max(clickStart, impStart);
+                pair = tryDecimalThousands(text.slice(a, b));
+                if (pair.length >= 2) return pair;
+            }
+
+            // 4b) 行优先 OCR：「Total impressions」之前的正文往往是点击列（含 40.8 / 49.1）
+            if (impStart > 0) {
+                pair = tryDecimalThousands(text.slice(0, impStart));
+                if (pair.length >= 2) return pair;
+            }
+
+            // 5) 纯数字 4～6 位（40800、49100）
+            const tryIntThousands = (str) => {
+                const raw = str.match(/\b([4-9]\d{4}|[1-9]\d{5})\b/g) || [];
+                if (raw.length < 2) return [];
+                return raw.slice(0, 2).map((n) => {
+                    const v = parseInt(n, 10);
+                    if (v >= 1000) return (v / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
+                    return n + 'K';
+                });
+            };
+            pair = tryIntThousands(segClick || '');
+            if (pair.length >= 2) return pair;
+
+            return [];
+        }
+
+        /**
+         * 从 OCR 文本解析 GSC 三卡片：Total clicks (K)、Total impressions (M/K)、Average CTR (%)
+         * 约定：每列自上而下为先旧周期、后新周期（与截图一致）
+         */
+        function parseGscOcrText(raw, columnTexts) {
+            const text = normalizeOcrText(raw);
+            const lower = text.toLowerCase();
+
+            const clickM = lower.match(/total\s+clicks?|总点击|点击次数/);
+            const clickStart = clickM ? clickM.index : -1;
+            const impM = lower.match(/total\s+impressions|总曝光|总展示|展示次数|impressions/);
+            const impStart = impM ? impM.index : -1;
+            const ctrM = lower.match(/average\s+ctr|平均点击率|点击率/);
+            const ctrStart = ctrM ? ctrM.index : -1;
+
+            let clicksPair = [];
+            if (columnTexts && columnTexts[0]) {
+                clicksPair = extractClicksFromLeftColumnText(columnTexts[0]);
+            }
+            if (clicksPair.length < 2) {
+                clicksPair = extractGscClicksPair(text, lower);
+            }
+
+            let impPair = [];
+            if (impStart >= 0 && ctrStart > impStart) {
+                const seg = text.slice(impStart, ctrStart);
+                let mm = seg.match(/\d+\.?\d*\s*[Mm]/g) || [];
+                if (mm.length < 2) mm = seg.match(/\d+\.?\d*\s*[Kk]/g) || [];
+                impPair = mm.slice(0, 2).map(s => {
+                    const t = s.replace(/\s+/g, '');
+                    if (/m/i.test(t)) return t.replace(/m/i, 'M');
+                    return t.replace(/k/i, 'K');
+                });
+            }
+            if (impPair.length < 2) {
+                const all = text.match(/\d+\.?\d*\s*[Mm]/g) || [];
+                impPair = all.slice(0, 2).map(s => s.replace(/\s+/g, '').replace(/m/i, 'M'));
+            }
+            if (impPair.length < 2 && columnTexts && columnTexts[1]) {
+                impPair = extractImpressionsPairFromMiddleColumn(columnTexts[1]);
+            }
+
+            let ctrPair = [];
+            if (ctrStart >= 0) {
+                const seg = text.slice(ctrStart);
+                const pct = seg.match(/\d+\.?\d*\s*%/g) || [];
+                ctrPair = pct.slice(0, 2).map(s => s.trim().replace(/\s+/g, ''));
+            }
+            if (ctrPair.length < 2) {
+                const all = text.match(/\d+\.?\d*\s*%/g) || [];
+                ctrPair = all.slice(0, 2).map(s => s.trim().replace(/\s+/g, ''));
+            }
+
+            const dates = [];
+            const reY = /(\d{4}[\/\-.]\d{1,2}[\/\-.]\d{1,2})\s*[-–~～]\s*(\d{4}[\/\-.]\d{1,2}[\/\-.]\d{1,2})/g;
+            let m;
+            while ((m = reY.exec(text)) !== null) dates.push(`${m[1]} - ${m[2]}`);
+            if (dates.length < 2) {
+                const reShort = /\d{1,2}\/\d{1,2}\/\d{2,4}\s*[-–~～]\s*\d{1,2}\/\d{1,2}\/\d{2,4}/g;
+                while ((m = reShort.exec(text)) !== null) dates.push(m[0]);
+            }
+
+            let prevDateRange = '';
+            let currDateRange = '';
+            if (dates.length >= 2) {
+                prevDateRange = dates[0];
+                currDateRange = dates[1];
+            } else if (dates.length === 1) {
+                prevDateRange = dates[0];
+            }
+
+            let prev = {
+                impressions: impPair[0] || '',
+                clicks: clicksPair[0] || '',
+                ctr: ctrPair[0] || '',
+                dateRange: prevDateRange
+            };
+            let curr = {
+                impressions: impPair[1] || '',
+                clicks: clicksPair[1] || '',
+                ctr: ctrPair[1] || '',
+                dateRange: currDateRange
+            };
+
+            const ok =
+                (prev.clicks && curr.clicks) ||
+                (prev.impressions && curr.impressions) ||
+                (prev.ctr && curr.ctr);
+
+            return normalizeGscPeriodOrder({ prev, curr, rawOcr: raw, parseOk: !!ok });
+        }
+
+        function applyGscExtractToUI(parsed) {
+            const panel = document.getElementById('gscExtractPanel');
+            const { prev, curr } = parsed;
+            document.getElementById('gscPrevClk').value = prev.clicks || '';
+            document.getElementById('gscPrevImp').value = prev.impressions || '';
+            document.getElementById('gscPrevCtr').value = prev.ctr || '';
+            document.getElementById('gscCurrClk').value = curr.clicks || '';
+            document.getElementById('gscCurrImp').value = curr.impressions || '';
+            document.getElementById('gscCurrCtr').value = curr.ctr || '';
+            document.getElementById('gscRowPrevLabel').textContent = prev.dateRange ? `上一周期 (${prev.dateRange})` : '上一周期';
+            document.getElementById('gscRowCurrLabel').textContent = curr.dateRange ? `本周期 (${curr.dateRange})` : '本周期';
+            panel.classList.add('active');
+        }
+
+        /** 从可编辑表格读回 GSC（优先于仅 OCR 缓存），用于「开始分析」 */
+        function readGscDataFromEditableTable() {
+            const panel = document.getElementById('gscExtractPanel');
+            if (!panel.classList.contains('active')) return null;
+            const prev = {
+                clicks: document.getElementById('gscPrevClk').value.trim(),
+                impressions: document.getElementById('gscPrevImp').value.trim(),
+                ctr: document.getElementById('gscPrevCtr').value.trim(),
+                dateRange: (document.getElementById('gscRowPrevLabel').textContent.match(/\(([^)]+)\)/) || [])[1] || ''
+            };
+            const curr = {
+                clicks: document.getElementById('gscCurrClk').value.trim(),
+                impressions: document.getElementById('gscCurrImp').value.trim(),
+                ctr: document.getElementById('gscCurrCtr').value.trim(),
+                dateRange: (document.getElementById('gscRowCurrLabel').textContent.match(/\(([^)]+)\)/) || [])[1] || ''
+            };
+            const ok = (prev.clicks && curr.clicks) || (prev.impressions && curr.impressions) || (prev.ctr && curr.ctr);
+            if (!ok) return null;
+            const merged = normalizeGscPeriodOrder({ prev, curr, rawOcr: (gscScreenshotData && gscScreenshotData.rawOcr) || '', parseOk: true });
+            return { prev: merged.prev, curr: merged.curr, rawOcr: (gscScreenshotData && gscScreenshotData.rawOcr) || '' };
+        }
+
+        function imageToCanvasForOcr(img) {
+            const maxW = 2000;
+            let w = img.naturalWidth || img.width;
+            let h = img.naturalHeight || img.height;
+            if (w > maxW) {
+                h = Math.round((h * maxW) / w);
+                w = maxW;
+            }
+            const canvas = document.createElement('canvas');
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, w, h);
+            return canvas;
+        }
+
+        /** 裁掉上方约 topCutRatio，保留下方（适合整页截图里 GSC 三卡片在偏下位置） */
+        function cropBottomFraction(sourceCanvas, topCutRatio) {
+            const w = sourceCanvas.width;
+            const h = sourceCanvas.height;
+            const top = Math.floor(h * topCutRatio);
+            const nh = h - top;
+            if (nh < 80) return sourceCanvas;
+            const out = document.createElement('canvas');
+            out.width = w;
+            out.height = nh;
+            out.getContext('2d').drawImage(sourceCanvas, 0, top, w, nh, 0, 0, w, nh);
+            return out;
+        }
+
+        /** 裁出左/中/右三列（与 GSC 三卡片同序：Clicks | Impressions | CTR） */
+        function cropColumnCanvas(sourceCanvas, colIndex, cols) {
+            const w = sourceCanvas.width;
+            const h = sourceCanvas.height;
+            const cw = Math.floor(w / cols);
+            const x = colIndex * cw;
+            const out = document.createElement('canvas');
+            out.width = cw;
+            out.height = h;
+            const ctx = out.getContext('2d');
+            ctx.drawImage(sourceCanvas, x, 0, cw, h, 0, 0, cw, h);
+            return out;
+        }
+
+        /** 窄列放大后再 OCR，减轻小字漏识别 */
+        function maybeUpscaleCanvas(canvas, minWidth) {
+            if (canvas.width >= minWidth) return canvas;
+            const scale = Math.min(3, minWidth / canvas.width);
+            const out = document.createElement('canvas');
+            out.width = Math.round(canvas.width * scale);
+            out.height = Math.round(canvas.height * scale);
+            const ctx = out.getContext('2d');
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            ctx.drawImage(canvas, 0, 0, out.width, out.height);
+            return out;
+        }
+
+        /**
+         * 仅从「左列」OCR 文本提取点击两期（不依赖全文里 Total clicks 出现顺序）
+         */
+        function extractClicksFromLeftColumnText(colText) {
+            if (!colText || !String(colText).trim()) return [];
+            const t = normalizeOcrText(colText);
+            const tryWan = (s) => {
+                const wm = s.match(/\d+\.?\d*\s*[万萬]/g) || [];
+                return wm.slice(0, 2).map((x) => String(x).replace(/\s+/g, ''));
+            };
+            let pair = tryWan(t);
+            if (pair.length >= 2) return pair;
+            const tryK = (s) => {
+                const km = s.match(/\d+\.?\d*\s*[KkXx]/g) || [];
+                return km.slice(0, 2).map((x) => normalizeKToken(x));
+            };
+            pair = tryK(t);
+            if (pair.length >= 2) return pair;
+
+            const tryDecimalThousands = (str) => {
+                const matches = str.match(/\b(\d{1,3}\.\d+)\b/g) || [];
+                const nums = matches
+                    .map((x) => parseFloat(x))
+                    .filter((n) => {
+                        if (n >= 2.4 && n <= 4.2) return false;
+                        return n >= 1.5 && n <= 500;
+                    });
+                if (nums.length < 2) return [];
+                return nums.slice(0, 2).map((n) => n.toFixed(1).replace(/\.0$/, '') + 'K');
+            };
+            pair = tryDecimalThousands(t);
+            if (pair.length >= 2) return pair;
+
+            const raw = t.match(/\b([4-9]\d{4}|[1-9]\d{5})\b/g) || [];
+            if (raw.length >= 2) {
+                return raw.slice(0, 2).map((n) => {
+                    const v = parseInt(n, 10);
+                    return v >= 1000 ? (v / 1000).toFixed(1).replace(/\.0$/, '') + 'K' : n + 'K';
+                });
+            }
+            return [];
+        }
+
+        /**
+         * 返回整图 OCR + 三列分别 OCR（解决整图阅读顺序导致漏掉蓝色 Total clicks 列）
+         */
+        async function runOcrOnImageSource(src) {
+            const el = new Image();
+            await new Promise((resolve, reject) => {
+                el.onload = resolve;
+                el.onerror = () => reject(new Error('图片加载失败'));
+                el.src = src;
+            });
+            const canvas = imageToCanvasForOcr(el);
+            const statusEl = document.getElementById('ocrStatus');
+            statusEl.textContent = '正在识别文字（首次加载可能需要下载模型）…';
+            statusEl.classList.remove('error');
+
+            if (typeof Tesseract === 'undefined') {
+                throw new Error('OCR 库未加载，请检查网络后刷新页面');
+            }
+
+            const worker = await Tesseract.createWorker('eng');
+            try {
+                const { data: { text: fullText } } = await worker.recognize(canvas);
+
+                await worker.setParameters({
+                    tessedit_pageseg_mode: '6'
+                });
+
+                const ocrOneCol = async (baseCanvas, c) => {
+                    let colCanvas = cropColumnCanvas(baseCanvas, c, 3);
+                    colCanvas = maybeUpscaleCanvas(colCanvas, 420);
+                    const { data: { text } } = await worker.recognize(colCanvas);
+                    return text || '';
+                };
+
+                const columns = [];
+                for (let c = 0; c < 3; c++) {
+                    statusEl.textContent = `正在识别第 ${c + 1}/3 列（对齐 GSC 三卡片）…`;
+                    columns.push(await ocrOneCol(canvas, c));
+                }
+
+                if (extractClicksFromLeftColumnText(columns[0]).length < 2) {
+                    statusEl.textContent = '正在对下方区域单独识别点击列（排除页顶工具栏干扰）…';
+                    for (const ratio of [0.22, 0.38, 0.52]) {
+                        const sub = cropBottomFraction(canvas, ratio);
+                        if (sub === canvas) continue;
+                        const alt = await ocrOneCol(sub, 0);
+                        if (extractClicksFromLeftColumnText(alt).length >= 2) {
+                            columns[0] = alt;
+                            break;
+                        }
+                    }
+                }
+
+                return { fullText, columns };
+            } finally {
+                await worker.terminate();
+            }
+        }
+
+        async function handleScreenshotFile(file) {
+            if (!file || !file.type.startsWith('image/')) {
+                document.getElementById('ocrStatus').textContent = '请选择图片文件';
+                document.getElementById('ocrStatus').classList.add('error');
+                return;
+            }
+            if (screenshotObjectUrl) {
+                URL.revokeObjectURL(screenshotObjectUrl);
+                screenshotObjectUrl = null;
+            }
+            screenshotObjectUrl = URL.createObjectURL(file);
+            document.getElementById('screenshotPreview').src = screenshotObjectUrl;
+            document.getElementById('screenshotPreviewWrap').classList.add('active');
+            document.getElementById('clearScreenshotBtn').style.display = 'inline-block';
+
+            try {
+                const ocr = await runOcrOnImageSource(screenshotObjectUrl);
+                const parsed = parseGscOcrText(ocr.fullText, ocr.columns);
+                const rawOcr = ocr.fullText
+                    + '\n\n--- 左列(Clicks) ---\n' + (ocr.columns[0] || '')
+                    + '\n--- 中列(Impressions) ---\n' + (ocr.columns[1] || '')
+                    + '\n--- 右列(CTR) ---\n' + (ocr.columns[2] || '');
+                gscScreenshotData = { prev: parsed.prev, curr: parsed.curr, rawOcr, columnOcr: ocr.columns };
+                applyGscExtractToUI(parsed);
+                if (parsed.parseOk) {
+                    document.getElementById('ocrStatus').textContent = '已解析截图中的整体表现数据 ✓';
+                    document.getElementById('ocrStatus').classList.remove('error');
+                } else {
+                    document.getElementById('ocrStatus').textContent = '未能可靠识别数值，请换更清晰的截图或稍后重试；周报「整体表现」将使用关键词表汇总。';
+                    document.getElementById('ocrStatus').classList.add('error');
+                }
+            } catch (e) {
+                console.error(e);
+                gscScreenshotData = null;
+                document.getElementById('ocrStatus').textContent = '识别失败：' + e.message;
+                document.getElementById('ocrStatus').classList.add('error');
+            }
+        }
+
+        function clearScreenshot() {
+            if (screenshotObjectUrl) {
+                URL.revokeObjectURL(screenshotObjectUrl);
+                screenshotObjectUrl = null;
+            }
+            gscScreenshotData = null;
+            document.getElementById('screenshotPreview').removeAttribute('src');
+            document.getElementById('screenshotPreviewWrap').classList.remove('active');
+            document.getElementById('clearScreenshotBtn').style.display = 'none';
+            document.getElementById('ocrStatus').textContent = '';
+            document.getElementById('ocrStatus').classList.remove('error');
+            document.getElementById('gscExtractPanel').classList.remove('active');
+            document.getElementById('screenshotInput').value = '';
+            ['gscPrevClk', 'gscPrevImp', 'gscPrevCtr', 'gscCurrClk', 'gscCurrImp', 'gscCurrCtr'].forEach((id) => {
+                const el = document.getElementById(id);
+                if (el) el.value = '';
+            });
+            document.getElementById('gscRowPrevLabel').textContent = '上一周期';
+            document.getElementById('gscRowCurrLabel').textContent = '本周期';
+        }
+
+        const screenshotSection = document.getElementById('screenshotSection');
+        document.getElementById('pickScreenshotBtn').addEventListener('click', () => {
+            document.getElementById('screenshotInput').click();
+        });
+        document.getElementById('screenshotInput').addEventListener('change', (e) => {
+            if (e.target.files && e.target.files[0]) handleScreenshotFile(e.target.files[0]);
+        });
+        document.getElementById('clearScreenshotBtn').addEventListener('click', clearScreenshot);
+
+        screenshotSection.addEventListener('paste', (e) => {
+            const items = e.clipboardData && e.clipboardData.items;
+            if (!items) return;
+            for (let i = 0; i < items.length; i++) {
+                if (items[i].type.indexOf('image') !== -1) {
+                    e.preventDefault();
+                    const file = items[i].getAsFile();
+                    if (file) handleScreenshotFile(file);
+                    break;
+                }
+            }
+        });
+
+        screenshotSection.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            screenshotSection.classList.add('paste-focus');
+        });
+        screenshotSection.addEventListener('dragleave', () => {
+            screenshotSection.classList.remove('paste-focus');
+        });
+        screenshotSection.addEventListener('drop', (e) => {
+            e.preventDefault();
+            screenshotSection.classList.remove('paste-focus');
+            const f = e.dataTransfer.files && e.dataTransfer.files[0];
+            if (f && f.type.startsWith('image/')) handleScreenshotFile(f);
+        });
+
+        // 拖拽上传
+        const uploadSection = document.getElementById('uploadSection');
+        const fileInput = document.getElementById('fileInput');
+
+        uploadSection.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadSection.classList.add('dragover');
+        });
+
+        uploadSection.addEventListener('dragleave', () => {
+            uploadSection.classList.remove('dragover');
+        });
+
+        uploadSection.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadSection.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+
+        uploadSection.addEventListener('click', (e) => {
+            if (e.target.tagName !== 'BUTTON') {
+                fileInput.click();
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        function handleFile(file) {
+            uploadedFile = file;
+            const fileInfo = document.getElementById('fileInfo');
+            document.getElementById('fileName').textContent = file.name;
+            document.getElementById('fileSize').textContent = formatFileSize(file.size);
+            fileInfo.classList.add('active');
+            document.getElementById('processBtn').disabled = false;
+
+            // 预览行数
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    let rowCount = 0;
+                    if (file.name.endsWith('.csv')) {
+                        const text = e.target.result;
+                        rowCount = text.split('\n').length - 1;
+                    } else {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                        const jsonData = XLSX.utils.sheet_to_json(sheet);
+                        rowCount = jsonData.length;
+                    }
+                    document.getElementById('rowCount').textContent = rowCount;
+                } catch (err) {
+                    console.error('Error reading file:', err);
+                }
+            };
+
+            if (file.name.endsWith('.csv')) {
+                reader.readAsText(file);
+            } else {
+                reader.readAsArrayBuffer(file);
+            }
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+        }
+
+        async function startProcessing() {
+            if (!uploadedFile) return;
+
+            document.getElementById('processBtn').disabled = true;
+            document.getElementById('progressSection').classList.add('active');
+            document.getElementById('errorMessage').innerHTML = '';
+            resetProgressUI();
+
+            try {
+                // Step 1: 读取文件
+                await updateProgress(1, 'processing', 20, '正在读取文件...');
+                const { keywordCsv, pageCsv } = await readFileAsCSV(uploadedFile);
+                const gscForProcess = readGscDataFromEditableTable() || gscScreenshotData;
+
+                await sleep(300);
+                await updateProgress(1, 'processing', 50, '正在解析数据...');
+
+                // Step 1: 数据分析（GSC 表格手动编辑优先于 OCR 缓存）
+                processedData = processData(keywordCsv, pageCsv, gscForProcess);
+                processedData.serper = null;
+                await sleep(300);
+                await updateProgress(1, 'completed', 100, '数据分析完成 ✓');
+
+                await sleep(400);
+
+                // Step 2: Serper
+                await updateProgress(2, 'processing', 5, '准备 Serper 请求…');
+                const serperResult = await runSerperPipeline(processedData);
+                processedData.serper = serperResult;
+                if (serperResult.error) {
+                    processedData.serper_note = serperResult.error;
+                }
+
+                await sleep(400);
+
+                // Step 3: 生成报告
+                await updateProgress(3, 'processing', 25, '正在生成报告结构...');
+                await sleep(300);
+
+                await updateProgress(3, 'processing', 55, '正在合并检索事实与数据洞察...');
+                finalReport = generateReport(processedData);
+                await sleep(400);
+
+                await updateProgress(3, 'processing', 88, '正在格式化报告...');
+                await sleep(200);
+
+                await updateProgress(3, 'completed', 100, '报告生成完成 ✓');
+
+                await sleep(400);
+                displayResults();
+
+            } catch (error) {
+                showError('处理出错：' + error.message);
+                console.error(error);
+                document.getElementById('processBtn').disabled = false;
+            }
+        }
+
+        async function readFileAsCSV(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+
+                reader.onload = (e) => {
+                    try {
+                        if (file.name.endsWith('.csv')) {
+                            resolve({ keywordCsv: e.target.result, pageCsv: '' });
+                            return;
+                        }
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        const names = workbook.SheetNames;
+                        const firstSheet = workbook.Sheets[names[0]];
+                        const keywordCsv = XLSX.utils.sheet_to_csv(firstSheet);
+                        let pageCsv = '';
+                        if (names.length > 1) {
+                            pageCsv = XLSX.utils.sheet_to_csv(workbook.Sheets[names[1]]);
+                        }
+                        resolve({ keywordCsv, pageCsv });
+                    } catch (err) {
+                        reject(err);
+                    }
+                };
+
+                reader.onerror = () => reject(new Error('文件读取失败'));
+
+                if (file.name.endsWith('.csv')) {
+                    reader.readAsText(file);
+                } else {
+                    reader.readAsArrayBuffer(file);
+                }
+            });
+        }
+
+        function buildSummaryFromGscScreenshot(g) {
+            if (!g || !g.prev || !g.curr) return null;
+            const p = g.prev;
+            const c = g.curr;
+            const hasImp = p.impressions && c.impressions;
+            const hasClk = p.clicks && c.clicks;
+            const hasCtr = p.ctr && c.ctr;
+            if (!hasImp && !hasClk && !hasCtr) return null;
+
+            let period = '最近一周 vs 上一周期';
+            if (p.dateRange && c.dateRange) {
+                period = `${p.dateRange} → ${c.dateRange}`;
+            } else if (p.dateRange || c.dateRange) {
+                period = [p.dateRange, c.dateRange].filter(Boolean).join(' → ');
+            }
+
+            return {
+                period,
+                total_imp: hasImp ? formatTrendDisplay(c.impressions, p.impressions) : null,
+                total_clk: hasClk ? formatTrendDisplay(c.clicks, p.clicks) : null,
+                avg_ctr_curr: hasCtr ? c.ctr : null,
+                avg_ctr_prev: hasCtr ? p.ctr : null
+            };
+        }
+
+        function mergeSummaryStats(csvStats, gscExtract) {
+            const fromShot = buildSummaryFromGscScreenshot(gscExtract);
+            if (!fromShot) {
+                return {
+                    ...csvStats,
+                    _source: 'csv_aggregate'
+                };
+            }
+            return {
+                period: fromShot.period || csvStats.period,
+                total_imp: fromShot.total_imp != null ? fromShot.total_imp : csvStats.total_imp,
+                total_clk: fromShot.total_clk != null ? fromShot.total_clk : csvStats.total_clk,
+                avg_ctr_curr: fromShot.avg_ctr_curr != null ? fromShot.avg_ctr_curr : csvStats.avg_ctr_curr,
+                avg_ctr_prev: fromShot.avg_ctr_prev != null ? fromShot.avg_ctr_prev : csvStats.avg_ctr_prev,
+                _source: 'gsc_screenshot'
+            };
+        }
+
+        function parseSheetLinesToRows(lines) {
+            const rows = [];
+            for (let i = 1; i < lines.length; i++) {
+                const values = parseCSVLine(lines[i]);
+                if (values.length < 5) continue;
+
+                const query = values[0].trim();
+                const clkPrev = parseFloat(values[1].replace(/,/g, '')) || 0;
+                const clkCurr = parseFloat(values[2].replace(/,/g, '')) || 0;
+                const impPrev = parseFloat(values[3].replace(/,/g, '')) || 0;
+                const impCurr = parseFloat(values[4].replace(/,/g, '')) || 0;
+                const diff = clkCurr - clkPrev;
+
+                rows.push({
+                    query, diff, clkCurr, clkPrev, impCurr, impPrev
+                });
+            }
+            return rows;
+        }
+
+        function processData(csvContent, pageCsvContent, gscExtract) {
+            const lines = csvContent.trim().split('\n');
+            if (lines.length < 2) {
+                throw new Error('数据表为空或仅含表头');
+            }
+
+            let totalClkCurr = 0, totalClkPrev = 0;
+            let totalImpCurr = 0, totalImpPrev = 0;
+            const keywordsData = parseSheetLinesToRows(lines);
+
+            keywordsData.forEach((item) => {
+                totalClkCurr += item.clkCurr;
+                totalClkPrev += item.clkPrev;
+                totalImpCurr += item.impCurr;
+                totalImpPrev += item.impPrev;
+            });
+
+            let pagesData = [];
+            if (pageCsvContent && String(pageCsvContent).trim()) {
+                const plines = String(pageCsvContent).trim().split('\n');
+                if (plines.length >= 2) {
+                    pagesData = parseSheetLinesToRows(plines);
+                }
+            }
+
+            // 分类品牌词和非品牌词
+            const brandTerms = ['moomoo', 'futu', 'ムームー', '富途'];
+            const brandData = [];
+            const nonBrandData = [];
+
+            keywordsData.forEach(item => {
+                const isBrand = brandTerms.some(term =>
+                    item.query.toLowerCase().includes(term.toLowerCase())
+                );
+
+                const sign = item.diff > 0 ? '+' : '';
+                const display = `${item.query} | ${sign}${Math.round(item.diff)}`;
+
+                const dataObj = { ...item, display };
+
+                if (isBrand) {
+                    brandData.push(dataObj);
+                } else {
+                    nonBrandData.push(dataObj);
+                }
+            });
+
+            brandData.sort((a, b) => b.diff - a.diff);
+            nonBrandData.sort((a, b) => b.diff - a.diff);
+
+            const formatTrend = (curr, prev) => {
+                if (prev === 0) return `${Math.round(curr)} (+∞)`;
+                const pct = ((curr - prev) / prev) * 100;
+                const sign = pct > 0 ? '+' : '';
+                return `${Math.round(curr)} (${sign}${pct.toFixed(1)}%)`;
+            };
+
+            const calculateCTR = (clicks, impressions) => {
+                if (impressions === 0) return '0.00%';
+                return `${((clicks / impressions) * 100).toFixed(2)}%`;
+            };
+
+            const csvSummary = {
+                period: "最近一周 vs 上一周期",
+                total_imp: formatTrend(totalImpCurr, totalImpPrev),
+                total_clk: formatTrend(totalClkCurr, totalClkPrev),
+                avg_ctr_curr: calculateCTR(totalClkCurr, totalImpCurr),
+                avg_ctr_prev: calculateCTR(totalClkPrev, totalImpPrev)
+            };
+
+            const summary_stats = mergeSummaryStats(csvSummary, gscExtract);
+
+            const pageRisers = pagesData.filter((x) => x.diff > 0).sort((a, b) => b.diff - a.diff).slice(0, 5);
+            const pageFallers = pagesData.filter((x) => x.diff < 0).sort((a, b) => a.diff - b.diff).slice(0, 5);
+            const pageDisplay = (item) => {
+                const sign = item.diff > 0 ? '+' : '';
+                return `${item.query} | 点击 ${sign}${Math.round(item.diff)}（本期 ${Math.round(item.clkCurr)} / 上期 ${Math.round(item.clkPrev)}）`;
+            };
+
+            const out = {
+                summary_stats,
+                non_brand_analysis: {
+                    risers: nonBrandData.filter(x => x.diff > 0).slice(0, 10).map(x => x.display),
+                    fallers: nonBrandData.filter(x => x.diff < 0).reverse().slice(0, 10).map(x => x.display)
+                },
+                brand_analysis: {
+                    risers: brandData.filter(x => x.diff > 0).slice(0, 5).map(x => x.display),
+                    fallers: brandData.filter(x => x.diff < 0).reverse().slice(0, 5).map(x => x.display)
+                },
+                raw_data: keywordsData,
+                page_analysis: pagesData.length ? {
+                    risers: pageRisers.map(pageDisplay),
+                    fallers: pageFallers.map(pageDisplay),
+                    risers_rows: pageRisers,
+                    fallers_rows: pageFallers,
+                    raw_pages: pagesData
+                } : null
+            };
+
+            if (gscExtract && (gscExtract.prev || gscExtract.curr)) {
+                out.gsc_screenshot = {
+                    prev: gscExtract.prev,
+                    curr: gscExtract.curr,
+                    rawOcr: gscExtract.rawOcr ? String(gscExtract.rawOcr).slice(0, 8000) : ''
+                };
+            }
+
+            return out;
+        }
+
+        function parseCSVLine(line) {
+            const result = [];
+            let current = '';
+            let inQuotes = false;
+
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+
+                if (char === '"') {
+                    inQuotes = !inQuotes;
+                } else if (char === ',' && !inQuotes) {
+                    result.push(current);
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+            result.push(current);
+
+            return result;
+        }
+
+        function organicListToMarkdown(organic) {
+            if (!organic || !organic.length) return '*（无 organic 结果，请换 query 或检查返回 JSON）*\n';
+            return organic.slice(0, 8).map((o, i) => {
+                const title = (o.title || '').replace(/\]/g, '');
+                const link = o.link || '#';
+                const sn = String(o.snippet || '').replace(/\n/g, ' ');
+                return `${i + 1}. [${title}](${link}) — ${sn}`;
+            }).join('\n') + '\n';
+        }
+
+        /**
+         * @param {object} data processedData
+         */
+        function buildSerperReportSection(data) {
+            const s = data.serper;
+            if (s && s.noQueries) {
+                return `### 🔎 Serper 联网检索\n\n*无非品牌「点击增长」词可检索，未发起请求。*\n\n`;
+            }
+            if (!s || s.skipped) {
+                let note = '';
+                if (data.serper_note) note = `\n*说明：${data.serper_note}*\n`;
+                return `### 🔎 Serper 联网检索\n\n*本期未执行 Serper 或已跳过。*${note}\n`;
+            }
+            let out = `### 🔎 Serper 联网检索（事实参考）\n\n`;
+            for (const e of s.entries || []) {
+                const dirLabel = e.direction === 'rise' ? '上涨' : '下跌';
+                out += `#### \`${e.keyword}\`（${dirLabel} · 点击差 ${e.diff > 0 ? '+' : ''}${Math.round(e.diff)}）\n\n`;
+                out += `- **检索 query**（单次请求，意图：**洞察该词点击上升背后的热点与原因**）：\`${e.query}\`\n\n`;
+                if (!e.ok) {
+                    out += `- *请求失败：${e.error}*\n\n`;
+                    continue;
+                }
+                out += `- *请从下列 organic 归纳：可能的热点事件、新闻由头、市场/板块情绪；摘要未提则写「摘要未体现」。*\n\n`;
+                out += organicListToMarkdown(e.response && e.response.organic);
+                out += '\n';
+            }
+            if (s.marketEntry) {
+                out += `#### 市场热点（泛检索 · 大盘/跨资产语境）\n\n`;
+                out += `- **检索 query**：\`${s.marketEntry.query}\`\n\n`;
+                if (!s.marketEntry.ok) {
+                    out += `- *请求失败：${s.marketEntry.error}*\n\n`;
+                } else {
+                    out += organicListToMarkdown(s.marketEntry.response && s.marketEntry.response.organic);
+                }
+            }
+            return out;
+        }
+
+        /**
+         * 与 Cursor 分析包 §2b 同构的三列表：基于 Serper organic 自动填充（第二列为说明性占位，第三列为证据摘要）。
+         * 使用 HTML + class，避免与「排名」三列表共用全局列宽导致错位。
+         */
+        function buildHotspotRiseTableFromSerper(data) {
+            const s = data && data.serper;
+            if (!s || s.skipped || s.noQueries) return '';
+            const entries = (s.entries || []).filter((e) => e.direction === 'rise');
+            if (!entries.length) return '';
+            const col2Placeholder = '摘要要点见右栏；简体深层归纳请用 Cursor 附录 A（2b）填写后粘贴替换。';
+            let html = '<h4>热点与上升原因归纳</h4>\n';
+            html += '<p><em>第二列「上升背后可能的热点…」的 <strong>简体中文深层归纳</strong> 建议在 Cursor 分析包 <strong>附录 A（2b）</strong> 中填写；填写后可粘贴到页面上方「热点归纳」框并「应用到报告」以替换下表。</em></p>\n';
+            html += '<table class="md-table-hotspot-2b"><thead><tr>';
+            html += '<th>关键词（及本期点击差）</th><th>上升背后可能的热点/事件/情绪</th><th>证据（标题或摘要原文要点）</th>';
+            html += '</tr></thead><tbody>';
+            for (const e of entries) {
+                const kwCell = `${e.keyword} (${e.diff > 0 ? '+' : ''}${Math.round(e.diff)})`;
+                if (!e.ok) {
+                    html += `<tr><td>${escapeHtml(mdEscapeReportCell(kwCell))}</td><td>检索失败</td><td>${escapeHtml(mdEscapeReportCell(e.error || '—'))}</td></tr>`;
+                    continue;
+                }
+                const organic = e.response && e.response.organic;
+                let ev = '';
+                if (organic && organic.length) {
+                    ev = organic.slice(0, 6).map((o, i) => {
+                        const title = (o.title || '').replace(/\|/g, '｜');
+                        const sn = String(o.snippet || '').replace(/\s+/g, ' ').replace(/\|/g, '｜');
+                        return `${i + 1}. ${title} — ${sn.slice(0, 300)}`;
+                    }).join(' ');
+                } else {
+                    ev = '（无 organic 结果）';
+                }
+                html += `<tr><td>${escapeHtml(mdEscapeReportCell(kwCell))}</td><td>${escapeHtml(mdEscapeReportCell(col2Placeholder))}</td><td>${escapeHtml(mdEscapeReportCell(ev))}</td></tr>`;
+            }
+            html += '</tbody></table>\n\n';
+            return html;
+        }
+
+        function escapeHtml(s) {
+            return String(s)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+
+        function mdEscapeReportCell(s) {
+            return String(s ?? '')
+                .replace(/\|/g, '｜')
+                .replace(/\r?\n/g, ' ')
+                .trim();
+        }
+
+        /** 解析 `关键词 | +123` 展示串 */
+        function parseKeywordOverviewLine(line) {
+            const t = String(line).trim();
+            const i = t.indexOf('|');
+            if (i === -1) return { kw: t, diff: '—' };
+            return { kw: t.slice(0, i).trim(), diff: t.slice(i + 1).trim() };
+        }
+
+        function buildKeywordTableMarkdown(rows) {
+            if (!rows || !rows.length || rows[0] === 'No significant changes') {
+                return '*无数据*\n\n';
+            }
+            let html = '<table class="md-table-rank-kw"><thead><tr><th>排名</th><th>关键词</th><th>点击变化</th></tr></thead><tbody>';
+            rows.forEach((line, idx) => {
+                const { kw, diff } = parseKeywordOverviewLine(line);
+                html += `<tr><td>${idx + 1}</td><td>${escapeHtml(mdEscapeReportCell(kw))}</td><td>${escapeHtml(mdEscapeReportCell(diff))}</td></tr>`;
+            });
+            html += '</tbody></table>\n\n';
+            return html;
+        }
+
+        function buildLandingPageTableMarkdown(rowObjs) {
+            if (!rowObjs || !rowObjs.length) {
+                return '*无数据*\n\n';
+            }
+            let html = '<table class="md-table-landing"><thead><tr><th>排名</th><th>落地页</th><th>点击变化</th><th>本期点击</th><th>上期点击</th></tr></thead><tbody>';
+            rowObjs.forEach((item, idx) => {
+                const sign = item.diff > 0 ? '+' : '';
+                html += `<tr><td>${idx + 1}</td><td>${escapeHtml(mdEscapeReportCell(item.query))}</td><td>${escapeHtml(sign + String(Math.round(item.diff)))}</td><td>${escapeHtml(String(Math.round(item.clkCurr)))}</td><td>${escapeHtml(String(Math.round(item.clkPrev)))}</td></tr>`;
+            });
+            html += '</tbody></table>\n\n';
+            return html;
+        }
+
+        /** 汇报用紧凑列表：与表格同源数据，格式为 `1. 关键词 | ±变化` */
+        function formatNumberedKeywordBlock(rows) {
+            if (!rows || !rows.length || rows[0] === 'No significant changes') {
+                return '（无）\n';
+            }
+            return rows.map((line, i) => `${i + 1}. ${String(line).trim()}`).join('\n') + '\n';
+        }
+
+        function formatNumberedLandingRows(rowObjs) {
+            if (!rowObjs || !rowObjs.length) {
+                return '（无）\n';
+            }
+            return rowObjs.map((item, i) => {
+                const sign = item.diff > 0 ? '+' : '';
+                return `${i + 1}. ${String(item.query || '').trim()} | ${sign}${Math.round(item.diff)}`;
+            }).join('\n') + '\n';
+        }
+
+        function buildPlainTextConclusions(data) {
+            const nb = data.non_brand_analysis || { risers: [], fallers: [] };
+            const br = data.brand_analysis || { risers: [], fallers: [] };
+            let t = '';
+            t += '非品牌词 (Non-Brand)\n';
+            t += '✅ Top 上涨\n';
+            t += formatNumberedKeywordBlock(nb.risers);
+            t += '\n⚠️ Top 下降\n';
+            t += formatNumberedKeywordBlock(nb.fallers);
+            t += '\n品牌词 (Brand)\n';
+            t += '✅ Top 上涨\n';
+            t += formatNumberedKeywordBlock(br.risers);
+            t += '\n⚠️ Top 下降\n';
+            t += formatNumberedKeywordBlock(br.fallers);
+            const pa = data.page_analysis;
+            if (pa && ((pa.risers_rows && pa.risers_rows.length) || (pa.fallers_rows && pa.fallers_rows.length))) {
+                t += '\n落地页概览\n';
+                t += '✅ 本期点击提升 Top 5\n';
+                t += formatNumberedLandingRows(pa.risers_rows || []);
+                t += '\n⚠️ 本期点击下降 Top 5\n';
+                t += formatNumberedLandingRows(pa.fallers_rows || []);
+            }
+            return t.trimEnd() + '\n';
+        }
+
+        /** TSV 多行 → GFM 表格（供 Cursor 表格复制粘贴） */
+        function tsvLinesToMarkdownTable(blockLines) {
+            const rows = blockLines.map((line) => String(line).split('\t').map((c) => c.trim()));
+            const n = Math.max(1, ...rows.map((r) => r.length));
+            if (n < 2) return blockLines.join('\n');
+            const esc = (cell) => String(cell ?? '').replace(/\|/g, '｜').replace(/\r?\n/g, ' ');
+            const padRow = (r) => {
+                const x = r.slice();
+                while (x.length < n) x.push('');
+                return x.slice(0, n);
+            };
+            let md = '| ' + padRow(rows[0]).map(esc).join(' | ') + ' |\n';
+            md += '| ' + Array(n).fill('---').join(' | ') + ' |\n';
+            for (let i = 1; i < rows.length; i++) {
+                md += '| ' + padRow(rows[i]).map(esc).join(' | ') + ' |\n';
+            }
+            return md.trimEnd();
+        }
+
+        function looksLikeMarkdownPipeTable(s) {
+            const t = String(s).trim();
+            if (!t) return false;
+            if (/\n\|\s*:?-{2,}[^|\n]*\|/.test(t) || /^\s*\|\s*:?-{2,}/m.test(t)) return true;
+            const lines = t.split('\n').map((l) => l.trim()).filter(Boolean);
+            if (lines.length < 2) return false;
+            const pipeLines = lines.filter((l) => /^\|/.test(l));
+            return pipeLines.length >= 2 && pipeLines.length >= Math.ceil(lines.length * 0.55);
+        }
+
+        /**
+         * 将 Cursor/表格里复制的「纯文本或 TSV」尽量转为可渲染的 GFM 表格。
+         */
+        function normalizePastedHotspot2bMarkdown(text) {
+            const s = String(text || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+            if (!s.trim()) return '';
+            if (looksLikeMarkdownPipeTable(s)) return s.trim();
+
+            const allLines = s.split('\n');
+            const out = [];
+            let i = 0;
+            while (i < allLines.length) {
+                const rawLine = allLines[i];
+                const line = String(rawLine).replace(/\u00a0/g, ' ');
+                if (line.includes('\t')) {
+                    const block = [];
+                    let j = i;
+                    while (j < allLines.length && String(allLines[j]).replace(/\u00a0/g, ' ').includes('\t')) {
+                        block.push(allLines[j]);
+                        j++;
+                    }
+                    if (block.length >= 2) {
+                        out.push(tsvLinesToMarkdownTable(block));
+                        i = j;
+                        continue;
+                    }
+                }
+                out.push(rawLine);
+                i++;
+            }
+            let merged = out.join('\n').trim();
+
+            if (!looksLikeMarkdownPipeTable(merged) && !merged.includes('\t')) {
+                const trySp = tryMultilineSpaceColumnsToTable(merged);
+                if (trySp) merged = trySp;
+            }
+            if (!looksLikeMarkdownPipeTable(merged) && !merged.includes('\n') && merged.includes('|')) {
+                const rec = tryRecoverInlinePipeCells(merged);
+                if (rec) merged = rec;
+            }
+            return merged.trim();
+        }
+
+        /** 单行内用 | 分隔、但无换行时，按固定 3 列折成多行表 */
+        function tryRecoverInlinePipeCells(s) {
+            const t = String(s).trim();
+            if (t.includes('\n') || !t.includes('|')) return null;
+            const parts = t.split(/\s*\|\s*/).map((x) => x.trim()).filter(Boolean);
+            if (parts.length < 6) return null;
+            const cols = 3;
+            if (parts.length % cols !== 0) return null;
+            const rows = [];
+            for (let i = 0; i < parts.length; i += cols) {
+                rows.push(parts.slice(i, i + cols).join('\t'));
+            }
+            if (rows.length < 2) return null;
+            return tsvLinesToMarkdownTable(rows);
+        }
+
+        /** 多行、列之间为两个及以上空格（无 Tab）时的保守转换 */
+        function tryMultilineSpaceColumnsToTable(s) {
+            const lines = s.split('\n').map((l) => l.trim()).filter(Boolean);
+            if (lines.length < 2) return null;
+            const split = (line) => line.split(/\s{2,}|\u3000{2,}/).map((x) => x.trim()).filter(Boolean);
+            const cols0 = split(lines[0]);
+            if (cols0.length < 3) return null;
+            const n = cols0.length;
+            const rows = [];
+            for (const ln of lines) {
+                const p = split(ln);
+                if (p.length < 2) return null;
+                rows.push(p);
+            }
+            if (rows.length < 2) return null;
+            const tabbed = rows.map((r) => {
+                const cells = r.slice();
+                while (cells.length < n) cells.push('');
+                return cells.slice(0, n).join('\t');
+            });
+            return tsvLinesToMarkdownTable(tabbed);
+        }
+
+        async function copyReportPlainText() {
+            if (!processedData) {
+                alert('请先完成「开始分析」。');
+                return;
+            }
+            const text = buildPlainTextConclusions(processedData);
+            try {
+                await navigator.clipboard.writeText(text);
+                alert('已复制纯文本结论到剪贴板（关键词/落地页为「序号. 词 | 变化」格式）。');
+            } catch (e) {
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                ta.setAttribute('readonly', '');
+                ta.style.position = 'fixed';
+                ta.style.left = '-9999px';
+                document.body.appendChild(ta);
+                ta.select();
+                try {
+                    document.execCommand('copy');
+                    alert('已复制（备用方式）。');
+                } catch (e2) {
+                    alert('复制失败，请使用 HTTPS/localhost 或手动从提示中复制。');
+                }
+                document.body.removeChild(ta);
+            }
+        }
+
+        function generateReport(data) {
+            const stats = data.summary_stats;
+            const nonBrand = data.non_brand_analysis;
+            const brand = data.brand_analysis;
+
+            let report = `# SEO 周报 | moomoo.com 搜索表现分析
+
+---
+
+## 1. 【Data Summary】数据概览
+
+### 📅 时间周期
+**${stats.period}**
+
+### 📊 整体表现
+* **Impressions（展示次数）**: ${stats.total_imp}
+* **Clicks（点击次数）**: ${stats.total_clk}
+* **平均CTR**: ${stats.avg_ctr_curr}（上期：${stats.avg_ctr_prev}）
+${stats._source === 'gsc_screenshot' ? '\n*（上述三项来自输入页 GSC 截图识别的新旧周期数据）*\n' : ''}
+### 🔍 关键词概览
+
+以下均为 **Markdown 表格**，便于在报告中对照。
+
+#### **非品牌词 (Non-Brand)**
+
+**✅ Top 上涨**
+
+`;
+
+            if (nonBrand.risers.length > 0 && nonBrand.risers[0] !== 'No significant changes') {
+                report += buildKeywordTableMarkdown(nonBrand.risers);
+            } else {
+                report += '*本期无显著上涨词汇*\n\n';
+            }
+
+            report += `**⚠️ Top 下降**
+
+`;
+
+            if (nonBrand.fallers.length > 0 && nonBrand.fallers[0] !== 'No significant changes') {
+                report += buildKeywordTableMarkdown(nonBrand.fallers);
+            } else {
+                report += '*本期无显著下降词汇*\n\n';
+            }
+
+            report += `#### **品牌词 (Brand)**
+
+**✅ Top 上涨**
+
+`;
+
+            if (brand.risers.length > 0 && brand.risers[0] !== 'No significant changes') {
+                report += buildKeywordTableMarkdown(brand.risers);
+            } else {
+                report += '*本期无显著上涨词汇*\n\n';
+            }
+
+            report += `**⚠️ Top 下降**
+
+`;
+
+            if (brand.fallers.length > 0 && brand.fallers[0] !== 'No significant changes') {
+                report += buildKeywordTableMarkdown(brand.fallers);
+            } else {
+                report += '*本期无显著下降词汇*\n\n';
+            }
+
+            report += `---
+
+### 📄 落地页概览
+
+`;
+
+            const pa = data.page_analysis;
+            if (pa && ((pa.risers && pa.risers.length) || (pa.fallers && pa.fallers.length) || (pa.risers_rows && pa.risers_rows.length) || (pa.fallers_rows && pa.fallers_rows.length))) {
+                report += `*数据来源：Excel **第二个工作表**（与关键词表相同列结构：页面/查询, 上期点击, 本期点击, …）*\n\n`;
+                report += `**✅ 本期点击提升 Top 5（落地页）**\n\n`;
+                if (pa.risers_rows && pa.risers_rows.length) {
+                    report += buildLandingPageTableMarkdown(pa.risers_rows);
+                } else if (pa.risers && pa.risers.length) {
+                    pa.risers.forEach((item, idx) => {
+                        report += `${idx + 1}. ${item}\n`;
+                    });
+                    report += '\n';
+                } else {
+                    report += '*无提升项*\n\n';
+                }
+                report += `**⚠️ 本期点击下降 Top 5（落地页）**\n\n`;
+                if (pa.fallers_rows && pa.fallers_rows.length) {
+                    report += buildLandingPageTableMarkdown(pa.fallers_rows);
+                } else if (pa.fallers && pa.fallers.length) {
+                    pa.fallers.forEach((item, idx) => {
+                        report += `${idx + 1}. ${item}\n`;
+                    });
+                    report += '\n';
+                } else {
+                    report += '*无下降项*\n\n';
+                }
+            } else {
+                report += `*未提供第二工作表落地页数据：请在 Excel 中增加与「关键词」表同结构的 **第二个工作表**（GSC 落地页导出），以生成落地页涨跌 Top5。*\n\n`;
+            }
+
+            report += `---
+
+## 2. 【Data Insights】数据洞察
+
+### 📈 非品牌词分析 (Non-Brand Insights)
+
+基于数据观察，本周非品牌词表现呈现以下特点：
+
+`;
+
+            // 分析上涨词（优先展示 Cursor §2b 粘贴内容，否则 Serper 三列表，否则通用要点）
+            if (nonBrand.risers.length > 0 && nonBrand.risers[0] !== "No significant changes") {
+                report += `**上涨趋势分析：**\n\n`;
+                const user2bRaw = (data.hotspot_2b_user_markdown && String(data.hotspot_2b_user_markdown).trim()) || '';
+                const user2b = user2bRaw ? normalizePastedHotspot2bMarkdown(user2bRaw) : '';
+                if (user2b) {
+                    report += user2b + '\n\n';
+                } else {
+                    const hotspotTable = buildHotspotRiseTableFromSerper(data);
+                    if (hotspotTable) {
+                        report += hotspotTable;
+                    } else {
+                        const topRiser = nonBrand.risers[0].split('|')[0].trim();
+                        report += `* 核心上涨词：\`${topRiser}\`\n`;
+                        if (data.serper && !data.serper.skipped && (data.serper.entries || []).some((e) => e.ok && e.keyword === topRiser)) {
+                            report += `* 异动背景：请结合 **JSON / Serper 原始** 页签中该词的检索摘要（完整报告不展示 Serper 全文）。\n`;
+                        } else {
+                            report += `* 可能原因：\n`;
+                            report += `  - 相关热点事件或市场波动\n`;
+                            report += `  - 投资者关注度提升\n`;
+                            report += `  - 行业趋势变化\n`;
+                        }
+                    }
+                }
+                report += `\n`;
+            }
+
+            // 分析下降词
+            if (nonBrand.fallers.length > 0 && nonBrand.fallers[0] !== "No significant changes") {
+                report += `**下降趋势分析：**\n\n`;
+                const topFaller = nonBrand.fallers[0].split('|')[0].trim();
+                report += `* 核心下降词：\`${topFaller}\`\n`;
+                if (data.serper && !data.serper.skipped && (data.serper.entries || []).some((e) => e.ok && e.keyword === topFaller)) {
+                    report += `* 异动背景：请结合 **JSON / Serper 原始** 中该词摘要（完整报告不展示 Serper 全文）。\n\n`;
+                } else {
+                    report += `* 可能原因：\n`;
+                    report += `  - 事件驱动流量消退（如IPO、财报发布后）\n`;
+                    report += `  - 热点周期结束\n`;
+                    report += `  - 市场注意力转移\n\n`;
+                }
+            }
+
+            report += `**SEO策略建议：**
+* ✅ 关注长期稳定的关键词布局
+* ✅ 建立热点事件监测机制
+* ✅ 优化常青内容的排名表现
+
+---
+
+### 🏢 品牌词分析 (Brand Insights)
+
+品牌词表现反映了用户对品牌的认知和活跃度：
+
+`;
+
+            // 分析品牌词上涨
+            if (brand.risers.length > 0 && brand.risers[0] !== "No significant changes") {
+                report += `**积极信号：**\n\n`;
+                brand.risers.slice(0, 3).forEach(item => {
+                    const word = item.split('|')[0].trim();
+                    if (word.includes('login') || word.includes('ログイン')) {
+                        report += `* \`${word}\` 上涨表明用户活跃度提升 ✅\n`;
+                    } else if (word.includes('campaign') || word.includes('キャンペーン')) {
+                        report += `* \`${word}\` 上涨反映营销活动效果良好 ✅\n`;
+                    } else {
+                        report += `* \`${word}\` 上涨说明品牌认知度在提升 ✅\n`;
+                    }
+                });
+                report += '\n';
+            }
+
+            // 分析品牌词下降
+            if (brand.fallers.length > 0 && brand.fallers[0] !== "No significant changes") {
+                report += `**需要关注：**\n\n`;
+                brand.fallers.slice(0, 3).forEach(item => {
+                    const word = item.split('|')[0].trim();
+                    if (word.includes('login') || word.includes('ログイン')) {
+                        report += `* \`${word}\` 下降需关注用户留存情况 ⚠️\n`;
+                    } else {
+                        report += `* \`${word}\` 下降可能需要新的营销策略 ⚠️\n`;
+                    }
+                });
+                report += '\n';
+            }
+
+            report += `**策略建议：**
+* 📊 监控用户活跃度指标（DAU/MAU）
+* 📢 规划新的营销活动提升品牌曝光
+* 🎯 优化品牌词落地页的转化率
+
+---
+
+## 3. 【Report Narratives】汇报脚本
+
+Good morning, team. Here is the SEO performance review for **${stats.period}**.
+
+**Overall Performance:**
+Our traffic shows ${stats.total_imp.includes('+') ? 'growth' : 'a decline'} this period. Total impressions reached ${stats.total_imp.split('(')[0].trim()}, and clicks were ${stats.total_clk.split('(')[0].trim()}.
+
+**Non-Brand Keywords:**
+`;
+
+            if (nonBrand.risers.length > 0 && nonBrand.risers[0] !== "No significant changes") {
+                const topRiser = nonBrand.risers[0].split('|')[0].trim();
+                const topRiserDiff = nonBrand.risers[0].split('|')[1].trim();
+                report += `The biggest winner was **"${topRiser}"** with ${topRiserDiff} clicks growth. This indicates increased user interest in this topic.\n\n`;
+            }
+
+            if (nonBrand.fallers.length > 0 && nonBrand.fallers[0] !== "No significant changes") {
+                const topFaller = nonBrand.fallers[0].split('|')[0].trim();
+                report += `On the other hand, **"${topFaller}"** saw a significant decline. This is likely due to the natural cooldown after an event-driven traffic spike.\n\n`;
+            }
+
+            report += `**Brand Keywords:**
+`;
+
+            if (brand.risers.length > 0 && brand.risers[0] !== "No significant changes") {
+                report += `Our brand keywords showed positive signs, with some growth in brand awareness.\n\n`;
+            } else if (brand.fallers.length > 0 && brand.fallers[0] !== "No significant changes") {
+                report += `We need to pay attention to our brand keywords, which showed some decline this period. This may require new marketing initiatives.\n\n`;
+            }
+
+            report += `**Conclusion:**
+We should continue monitoring these trends and adjust our SEO strategy accordingly. Focus on building evergreen content while staying ready to capitalize on emerging opportunities.
+
+Thank you.
+
+---
+
+## 4. 【Strategic Recommendations】策略建议
+
+`;
+
+            const strategyUserRaw = (data.cursor_strategy_user_markdown && String(data.cursor_strategy_user_markdown).trim()) || '';
+            const strategyUser = strategyUserRaw ? normalizePastedHotspot2bMarkdown(strategyUserRaw) : '';
+            if (strategyUser) {
+                report += `### 📊 Cursor 长短期运营方案
+
+${strategyUser}
+
+---
+
+`;
+            } else {
+                report += `### 🎯 立即执行（本周）
+
+1. **优化表现良好的关键词**
+   - 加强Top上涨词相关内容的更新
+   - 优化页面加载速度和用户体验
+
+2. **分析下降原因**
+   - 深入调查Top下降词的流失原因
+   - 检查页面是否有技术问题
+
+3. **准备内容日历**
+   - 规划下周可能的热点话题
+   - 提前准备相关内容
+
+### 📅 短期优化（本月）
+
+1. **内容质量提升**
+   - 更新老旧内容
+   - 增加数据可视化
+   - 添加更多用户案例
+
+2. **技术SEO优化**
+   - 检查移动端适配
+   - 优化结构化数据
+   - 提升Core Web Vitals指标
+
+3. **用户体验优化**
+   - 简化注册流程
+   - 优化登录体验
+   - 增加个性化推荐
+
+### 🚀 中长期战略（季度）
+
+1. **多元化流量来源**
+   - 减少对单一关键词的依赖
+   - 拓展长尾关键词布局
+   - 提升品牌词占比
+
+2. **建立监测系统**
+   - 实时监控关键词排名
+   - 建立竞品分析体系
+   - 设置预警机制
+
+3. **内容生态建设**
+   - 培养KOL合作关系
+   - 增加用户生成内容
+   - 建立社区讨论氛围
+
+---
+
+`;
+            }
+
+            report += `**报告生成时间**: ${new Date().toLocaleString('zh-CN')}  
+**分析工具**: SEO数据分析工具 v2.0（Serper 联网版 · 独立文件 \`seo-weekly-report-serper.html\`）  
+**数据来源**: Google Search Console；联网摘要来自 Serper（若已启用）
+`;
+
+            return report;
+        }
+
+        async function updateProgress(step, status, progress, description) {
+            const progressItem = document.getElementById(`progress${step}`);
+            const icon = document.getElementById(`icon${step}`);
+            const statusEl = document.getElementById(`status${step}`);
+            const desc = document.getElementById(`desc${step}`);
+            const bar = document.getElementById(`bar${step}`);
+
+            // 更新图标
+            if (status === 'processing') {
+                icon.innerHTML = '<span class="spinner"></span>';
+                progressItem.classList.add('processing');
+                progressItem.classList.remove('completed');
+            } else if (status === 'completed') {
+                icon.textContent = '✅';
+                progressItem.classList.add('completed');
+                progressItem.classList.remove('processing');
+            }
+
+            // 更新状态
+            statusEl.className = `progress-status status-${status}`;
+            statusEl.textContent = status === 'processing' ? '处理中...' :
+                                  status === 'completed' ? '完成' : '等待中';
+
+            // 更新描述
+            desc.textContent = description;
+
+            // 更新进度条
+            bar.style.width = progress + '%';
+        }
+
+        function renderSerperRawPanel() {
+            const panel = document.getElementById('serperRawPanel');
+            const s = processedData && processedData.serper;
+            if (s && s.noQueries) {
+                panel.innerHTML = '<p class="muted" style="color:#888;">无非品牌「点击增长」词，未发起 Serper 请求。</p>';
+                return;
+            }
+            if (!s || s.skipped || (!(s.entries || []).length && !s.marketEntry)) {
+                panel.innerHTML = '<p class="muted" style="color:#888;">本期未产生 Serper 请求或已跳过。</p>';
+                return;
+            }
+            let html = '';
+            (s.entries || []).forEach((e, i) => {
+                const title = `${e.keyword || ''} · ${e.direction === 'rise' ? '涨' : '跌'} · ${e.ok ? 'OK' : '失败'}`;
+                const payload = e.ok ? e.response : { error: e.error, detail: e.response };
+                html += `<details class="serper-detail" ${i === 0 ? 'open' : ''}><summary>${escapeHtml(title)} — <code>${escapeHtml((e.query || '').slice(0, 80))}</code></summary><pre>${escapeHtml(JSON.stringify(payload, null, 2))}</pre></details>`;
+            });
+            if (s.marketEntry) {
+                const title = `市场热点泛检索 · ${s.marketEntry.ok ? 'OK' : '失败'}`;
+                const payload = s.marketEntry.ok ? s.marketEntry.response : { error: s.marketEntry.error, detail: s.marketEntry.response };
+                html += `<details class="serper-detail"><summary>${escapeHtml(title)}</summary><pre>${escapeHtml(JSON.stringify(payload, null, 2))}</pre></details>`;
+            }
+            panel.innerHTML = html || '<p class="muted">无条目</p>';
+        }
+
+        function organicLinesForBundle(organic) {
+            if (!organic || !organic.length) return '（无 organic 结果）\n';
+            return organic.slice(0, 8).map((o, i) => {
+                const sn = String(o.snippet || '').replace(/\s+/g, ' ').trim();
+                return `${i + 1}. ${o.title || ''}\n   URL: ${o.link || ''}\n   摘要: ${sn}`;
+            }).join('\n\n') + '\n';
+        }
+
+        /**
+         * Cursor 分析包中的「第 2 节」正文（含 `## 2.` 标题），与全文包内 §2 完全一致。
+         */
+        function buildCursorBundleSerperSectionBody(data) {
+            if (!data) return '';
+            let md = `## 2. Serper 联网事实摘录\n\n`;
+            md += `**选词规则**：Serper 仅针对第 1 节中非品牌词里 **点击增长量（diff）最大的前 X 个词**（X = 工具内「最多检索关键词数」），用于解释 **搜索量/点击为何上升**。\n\n`;
+            md += `**单次 query 设计意图**：关键词 + **当年份** + 新闻/趋势/注目/理由/背景/话题等词，使 organic 更易出现 **事件、行情、报道**；若仍偏泛，可在 Cursor 中针对单条热点再人工补搜（本工具不自动加请求）。\n\n`;
+            md += `请从 organic 的 **标题、URL、摘要** 归纳 **上升背后的热点原因**（勿编造正文未出现的事实）。\n\n`;
+
+            const s = data.serper;
+            if (!s || s.skipped || s.noQueries) {
+                md += `*本期未跑 Serper 或无可检索词。*\n`;
+                if (data.serper_note) md += `*说明：${data.serper_note}*\n`;
+                md += `\n（你仍可根据第 1 节做推断，或自行补充检索。）\n\n`;
+            } else {
+                for (const e of s.entries || []) {
+                    md += `### 关键词：\`${e.keyword}\`（${e.direction === 'rise' ? '上涨' : '下跌'} · 点击差 ${e.diff > 0 ? '+' : ''}${Math.round(e.diff)}）\n\n`;
+                    md += `- **复合 Query**：\`${e.query}\`\n\n`;
+                    if (!e.ok) {
+                        md += `*请求失败：${e.error}*\n\n`;
+                        continue;
+                    }
+                    md += organicLinesForBundle(e.response && e.response.organic);
+                    md += `\n`;
+                }
+                if (s.marketEntry) {
+                    md += `### 市场热点（泛检索 · 日/美股指与大盘事件语境）\n\n`;
+                    md += `- Query：\`${s.marketEntry.query}\`\n\n`;
+                    if (!s.marketEntry.ok) {
+                        md += `*失败：${s.marketEntry.error}*\n\n`;
+                    } else {
+                        md += organicLinesForBundle(s.marketEntry.response && s.marketEntry.response.organic);
+                    }
+                }
+            }
+            return md;
+        }
+
+        /** §2b 三列表正文（表格 + 语言说明，无二级标题）— 用于文末附录 A */
+        function buildCursorBundle2bTableBody(data) {
+            let md = `对**每个** Serper 关键词，整理「GSC 点击上升 ↔ 站外热点」逻辑（无则写「摘要未体现」）：\n\n`;
+            md += `| 关键词（及本期点击差） | 上升背后可能的热点/事件/情绪 | 证据（标题或摘要原文要点） |\n`;
+            md += `| --- | --- | --- |\n`;
+            const esc = (c) => String(c).replace(/\|/g, '｜');
+            const s = data && data.serper;
+            let rows = 0;
+            if (s && !s.skipped && !s.noQueries && (s.entries || []).length) {
+                for (const e of s.entries) {
+                    if (e.direction !== 'rise') continue;
+                    const kw = `${e.keyword} (${e.diff > 0 ? '+' : ''}${Math.round(e.diff)})`;
+                    md += `| ${esc(kw)} |  |  |\n`;
+                    rows++;
+                }
+            }
+            if (rows === 0) {
+                md += `| （无 Serper 时请手动填写） |  |  |\n`;
+            }
+            md += `\n**语言要求（强制）**：第二列「上升背后可能的热点/事件/情绪」必须用 **简体中文**；第三列可保留原文关键词，建议加简短中文说明。\n`;
+            return md.trimEnd() + '\n';
+        }
+
+        function buildStrategySixColumnTableSkeleton() {
+            return `| **热点** | **要做什么** | **建议怎么做** | **运营时间节点** | **投放时间范围** | **事实依据** |\n` +
+                `| --- | --- | --- | --- | --- | --- |\n` +
+                `|  |  |  |  |  |  |\n`;
+        }
+
+        /** 文末附录：§2b 表 + 短/长 6 列表骨架，与正文第 1～3 节独立 */
+        function buildCursorBundleAppendixMarkdown(data) {
+            const t = new Date().toLocaleString('zh-CN');
+            let md = `---\n\n## 附录 · Markdown 表格（复制即用）\n\n`;
+            md += `> 附录生成时间：${t}  \n`;
+            md += `> **附录 A**：补全第二、三列后，可粘贴到「完整报告 → 热点与上升原因归纳 → 应用到报告」。  \n`;
+            md += `> **附录 B / C**：补全后，可粘贴到「完整报告 → 长短期运营方案 → 应用到报告」。\n\n`;
+            md += `### 附录 A · 2b 热点与上升原因归纳\n\n`;
+            md += buildCursorBundle2bTableBody(data);
+            md += `\n---\n\n### 附录 B · 短期方案（约 1～4 周）\n\n`;
+            md += buildStrategySixColumnTableSkeleton();
+            md += `\n---\n\n### 附录 C · 长期方案（季度级）\n\n`;
+            md += buildStrategySixColumnTableSkeleton();
+            return md.trimEnd() + '\n';
+        }
+
+        /**
+         * 供粘贴到 Cursor 的单一 Markdown（人工深化长短期运营方案，不调用页内 LLM）。
+         */
+        function buildCursorBundleMarkdown(data) {
+            if (!data) return '';
+            const stats = data.summary_stats || {};
+            const nb = data.non_brand_analysis || { risers: [], fallers: [] };
+            const br = data.brand_analysis || { risers: [], fallers: [] };
+            const t = new Date().toLocaleString('zh-CN');
+
+            let md = `# Cursor 分析包 · SEO 流量周报（moomoo）\n\n`;
+            md += `> 生成时间：${t}  \n> 用途：复制全文到 **Cursor**，请模型基于下列事实输出「长短期运营方案」。\n\n`;
+            md += `---\n\n## 1. 本地流量摘要（GSC 导出 / 截图）\n\n`;
+            md += `- **周期**：${stats.period || '—'}\n`;
+            md += `- **展示**：${stats.total_imp || '—'}\n`;
+            md += `- **点击**：${stats.total_clk || '—'}\n`;
+            md += `- **平均 CTR**：本期 ${stats.avg_ctr_curr || '—'}，上期 ${stats.avg_ctr_prev || '—'}\n`;
+            if (stats._source) md += `- **整体数据来源**：${stats._source}\n`;
+            md += `\n### 非品牌词 Top 涨跌（字符串）\n\n`;
+            md += `**涨：**\n${(nb.risers || []).length ? nb.risers.map((x, i) => `${i + 1}. ${x}`).join('\n') : '（无）'}\n\n`;
+            md += `**跌：**\n${(nb.fallers || []).length ? nb.fallers.map((x, i) => `${i + 1}. ${x}`).join('\n') : '（无）'}\n\n`;
+            md += `### 品牌词 Top 涨跌\n\n`;
+            md += `**涨：**\n${(br.risers || []).length ? br.risers.map((x, i) => `${i + 1}. ${x}`).join('\n') : '（无）'}\n\n`;
+            md += `**跌：**\n${(br.fallers || []).length ? br.fallers.map((x, i) => `${i + 1}. ${x}`).join('\n') : '（无）'}\n\n`;
+            const pa = data.page_analysis;
+            if (pa && (pa.risers || []).length + (pa.fallers || []).length > 0) {
+                md += `### 落地页涨跌（Excel 第二工作表）\n\n`;
+                md += `**点击提升 Top5：**\n${(pa.risers || []).map((x, i) => `${i + 1}. ${x}`).join('\n')}\n\n`;
+                md += `**点击下降 Top5：**\n${(pa.fallers || []).map((x, i) => `${i + 1}. ${x}`).join('\n')}\n\n`;
+            } else {
+                md += `### 落地页涨跌\n\n*未提供第二工作表时无此项。*\n\n`;
+            }
+            md += `---\n\n`;
+            md += buildCursorBundleSerperSectionBody(data);
+
+            md += `\n---\n\n## 2b. 热点与上升原因归纳（请基于第 2 节填写）\n\n`;
+            md += `**完整 Markdown 表格**（关键词列已按 Serper 预填）已置于文末 **「附录 A」**。请在 Cursor 中**直接编辑附录 A** 补全第二、三列；勿在本节重复粘贴整表。\n\n`;
+            md += `**语言要求（强制）**：第二列「上升背后可能的热点/事件/情绪」必须用 **简体中文**；第三列可保留原文关键词并加简短中文说明。\n\n`;
+
+            md += `---\n\n## 2c. moomoo 产品力与官网可运营能力（固定参考）\n\n`;
+            md += `用于第 3 节表格中 **「建议怎么做」** 列：将下列能力与热点结合（勿空泛）：\n\n`;
+            md += `### moomoo 产品力（行情能力）\n\n`;
+            md += `- moomoo 平台提供 **行情与图表能力**（如 K 线、分时、指标、自选、多市场品种等，以实际上线为准）；方案中应写清「用户在本热点下可如何用行情能力完成决策/对比」。\n\n`;
+            md += `### moomoo 官网可运营做法\n\n`;
+            md += `- 可 **自定义行情榜单** 并在站内展示；\n`;
+            md += `- 可投放 **网页侧边栏** 资源位；\n`;
+            md += `- 可投放 **顶部 banner** 与 **侧边栏 banner**；\n`;
+            md += `- 可投放与热点相关的 **讨论话题**、**资讯**、**牛友讨论** 等内容形态。\n\n`;
+            md += `*方案须显式对应到上述渠道组合（例：侧栏榜单 + 顶栏 banner 导流行情 + 牛友话题承接）。*\n\n`;
+
+            const pad = (n) => String(n).padStart(2, '0');
+            const now = new Date();
+            const baseline = `${now.getFullYear()}.${pad(now.getMonth() + 1)}.${pad(now.getDate())}`;
+
+            md += `---\n\n## 3. 请在 Cursor 中输出的内容（任务说明）\n\n`;
+            md += `**基准日（视为「今天」）**：\`${baseline}\`\n\n`;
+            md += `请基于 **第 1 节**、**第 2 节 Serper**、**第 2b 热点归纳**、**第 2c moomoo 能力**，输出 **短期** 与 **长期** 运营方案；须**紧密结合热点原因**，避免空泛套话。\n\n`;
+            md += `### 「运营机会表」固定列结构（6 列）\n\n`;
+            md += `**短期方案（约 1～4 周）** 与 **长期方案（季度级等）** 各输出 **一张完整表**，表头 **固定为以下 6 列**（勿合并「要做什么/建议怎么做」，勿增加 moomoo 侧资源组合/备注列）：\n\n`;
+            md += `| **热点** | **要做什么** | **建议怎么做** | **运营时间节点** | **投放时间范围** | **事实依据** |\n`;
+            md += `| --- | --- | --- | --- | --- | --- |\n\n`;
+            md += `各列说明：\n\n`;
+            md += `1. **热点**：简练短语，只写 **市场/站外热点与上升原因**（与第 2b 对应），**不写执行动作**。\n`;
+            md += `2. **要做什么**：用动词开头的 **明确指令**（运营机会/核心动作）。\n`;
+            md += `3. **建议怎么做**：可执行细节，必须结合 **第 2c**（自定义行情榜单、侧栏、顶栏/侧栏 banner、话题、资讯、牛友讨论等）及 **行情能力**（日历、热力图、K 线等，**以实际产品为准**）。\n`;
+            md += `4. **运营时间节点**：何时/何阶段 + 括号内洞察（财报季、波动等）；关键日尽量 \`YYYY.MM.DD\`。\n`;
+            md += `5. **投放时间范围**：\`YYYY.MM.DD～YYYY.MM.DD\`。\n`;
+            md += `6. **事实依据**：引用第 2 节或第 1 节；不足写「依据不足」。\n\n`;
+            md += `### Markdown 表格格式（强制，短期与长期均需遵守）\n\n`;
+            md += `- **每一行必须单独换行**：表头行、分隔行、**每一条数据行** 各占一行；**禁止**把整张表（含长期方案）打成 **一行连续文本**，否则无法渲染为表格。\n`;
+            md += `- **分隔行**：共 **6** 段 \`---\`，例如：\`| --- | --- | --- | --- | --- | --- |\`；**禁止** \`|| ---\` 粘连。\n`;
+            md += `- 输出 **长期方案（季度级）** 时：先写三级标题 \`### 长期方案（季度级）\`，**空一行**，再输出完整表格（规则同上）。短期同理：\`### 短期方案（约 1～4 周）\` 后空一行再跟表。\n`;
+            md += `- 单元格内文字较长时：用中文分号 \`；\` 或句点分段；**不要**在单元格内敲真实换行（若必须分段可写「①②」或 \`<br>\` 仅在目标平台支持 HTML 时使用）。\n\n`;
+            md += `正确示例（注意每行末尾都有换行概念）：\n\n`;
+            md += '```markdown\n';
+            md += `### 长期方案（季度级）\n\n`;
+            md += `| **热点** | **要做什么** | **建议怎么做** | **运营时间节点** | **投放时间范围** | **事实依据** |\n`;
+            md += `| --- | --- | --- | --- | --- | --- |\n`;
+            md += `| 示例热点 | 上线某主题榜单 | 侧栏+顶栏 banner 导流行情；配合资讯 | 2026.04.08 起（洞察…） | 2026.04.08～2026.06.30 | 第2节摘要要点 |\n`;
+            md += '```\n\n';
+            md += `### 关于日期（与「运营时间节点」「投放时间范围」一致）\n\n`;
+            md += `- **投放时间范围** 必须 **YYYY.MM.DD～YYYY.MM.DD**（或单日写同日起止）。\n`;
+            md += `- **运营时间节点** 中的关键日也尽量给 **YYYY.MM.DD**；若只能写阶段，须与投放范围不矛盾。\n`;
+            md += `- 推算须参考 **基准日** \`${baseline}\` 与第 2 节热点；无法确定时标「待定」并说明原因。\n\n`;
+            md += `### 其余要求\n\n`;
+            md += `1. **短期**：行数覆盖第 2b 中主要热点机会；每行必须是可执行动作，禁止仅复述数据。\n`;
+            md += `2. **长期**：侧重可持续专题/栏目与品牌资产，并与短期在时间与资源位上衔接；**表格换行规则与短期完全相同**，勿合并为一行。\n`;
+            md += `3. 输出语言：中文为主，关键术语可保留日文/英文。\n\n`;
+            md += `### 回复末尾格式（便于在 Cursor 一键复制 Markdown）\n\n`;
+            md += `在完成上述分析与表格填写后，请在**同一条回复的末尾**再追加 **一个** Markdown 代码块（用 \`\`\`markdown 与 \`\`\` 包裹），其中仅包含你已写好的：\n\n`;
+            md += `- **附录 A**：2b 三列表（完整 GFM 表，含表头与分隔行）；\n`;
+            md += `- **附录 B**：短期 6 列运营表（含 \`### 短期方案（约 1～4 周）\` 等小标题亦可）；\n`;
+            md += `- **附录 C**：长期 6 列运营表（含 \`### 长期方案（季度级）\` 等小标题亦可）。\n\n`;
+            md += `代码块内表格**每行单独换行**，与网页工具生成的附录结构一致，便于用户在 Cursor 中点击代码块右上角**复制**整段 Markdown，无需再次向模型索要源码。\n\n`;
+            md += `（完）\n\n`;
+            md += buildCursorBundleAppendixMarkdown(data);
+
+            return md;
+        }
+
+        function refreshCursorBundle() {
+            cursorBundleText = buildCursorBundleMarkdown(processedData);
+            const el = document.getElementById('cursorBundleText');
+            if (el) el.value = cursorBundleText;
+        }
+
+        async function copyCursorBundle() {
+            refreshCursorBundle();
+            const t = cursorBundleText || buildCursorBundleMarkdown(processedData);
+            try {
+                await navigator.clipboard.writeText(t);
+                alert('已复制全文 Markdown 到剪贴板，可粘贴到 Cursor 对话。');
+            } catch (e) {
+                const el = document.getElementById('cursorBundleText');
+                if (el) {
+                    el.select();
+                    document.execCommand('copy');
+                    alert('已尝试复制；若失败请手动全选文本框再复制。');
+                }
+            }
+        }
+
+        function downloadCursorBundle() {
+            refreshCursorBundle();
+            const t = cursorBundleText || buildCursorBundleMarkdown(processedData);
+            const blob = new Blob([t], { type: 'text/markdown;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `cursor_bundle_${new Date().toISOString().split('T')[0]}.md`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        /** 将 Markdown 转为 HTML（兼容 marked 不同导出方式） */
+        function parseMarkdownToHtml(src) {
+            const s = String(src ?? '');
+            if (typeof marked !== 'undefined' && typeof marked.setOptions === 'function' && !marked._seoGfmInit) {
+                try {
+                    marked.setOptions({ gfm: true, breaks: false });
+                    marked._seoGfmInit = true;
+                } catch (e) {}
+            }
+            if (typeof marked !== 'undefined' && typeof marked.parse === 'function') {
+                return marked.parse(s);
+            }
+            if (typeof marked !== 'undefined' && typeof marked === 'function') {
+                return marked(s);
+            }
+            return s.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
+        }
+
+        /** 为 GFM 表格补充 class，使粘贴的 §2b / 长短期表与「数据洞察」内嵌表视觉一致 */
+        function decorateMarkdownTables(html) {
+            try {
+                const wrap = document.createElement('div');
+                wrap.innerHTML = html;
+                wrap.querySelectorAll('table').forEach((tbl) => {
+                    if (tbl.className && String(tbl.className).trim()) return;
+                    const first = tbl.querySelector('thead tr') || tbl.querySelector('tr');
+                    if (!first) return;
+                    const n = first.querySelectorAll('th, td').length;
+                    if (n === 3) tbl.classList.add('md-table-hotspot-2b');
+                    if (n === 6) tbl.classList.add('md-table-strategy-ops');
+                });
+                return wrap.innerHTML;
+            } catch (e) {
+                return html;
+            }
+        }
+
+        function renderReportHtml(md) {
+            return decorateMarkdownTables(parseMarkdownToHtml(md));
+        }
+
+        /** 去掉外层 ``` / ```markdown 围栏 */
+        function stripOuterMarkdownCodeFence(text) {
+            let s = String(text || '').replace(/\r\n/g, '\n');
+            s = s.trim();
+            if (!s.startsWith('```')) return s;
+            const nl = s.indexOf('\n');
+            if (nl === -1) {
+                return s.replace(/^```\w*\s*/, '').replace(/```\s*$/g, '').trim();
+            }
+            s = s.slice(nl + 1);
+            const lastFence = s.lastIndexOf('\n```');
+            if (lastFence !== -1) {
+                s = s.slice(0, lastFence);
+            } else {
+                s = s.replace(/\n```\s*$/m, '').replace(/```\s*$/g, '');
+            }
+            return s.trim();
+        }
+
+        function countGfmHeaderColumns(line) {
+            const parts = String(line).split('|');
+            if (parts.length < 2) return 0;
+            return Math.max(0, parts.length - 2);
+        }
+
+        /** 取块内第一个 GFM 表格（表头 + 分隔行 + 数据行） */
+        function extractFirstGfmPipeTable(block) {
+            const lines = String(block).split('\n');
+            for (let i = 0; i < lines.length - 1; i++) {
+                const line = lines[i];
+                const t = line.trim();
+                if (!/^\|/.test(t)) continue;
+                const sep = (lines[i + 1] || '').trim();
+                if (!/^\|/.test(sep) || !/\|?\s*:?-{3,}/.test(sep)) continue;
+                const cols = countGfmHeaderColumns(line);
+                if (cols < 2) continue;
+                let end = i + 2;
+                while (end < lines.length && /^\s*\|/.test(lines[end])) end++;
+                return { cols, text: lines.slice(i, end).join('\n').trim() };
+            }
+            return null;
+        }
+
+        /** 策略区（附录 B + C）起始位置：取所有候选中的最小下标 */
+        function findStrategySectionStartIndex(s) {
+            const text = String(s || '');
+            const candidates = [];
+
+            const pushAll = (re) => {
+                let m;
+                const r = new RegExp(re.source, re.flags.includes('g') ? re.flags : re.flags + 'g');
+                while ((m = r.exec(text)) !== null) {
+                    candidates.push(m.index);
+                }
+            };
+
+            pushAll(/###\s*附录\s*[BbＢ][^\n]*/g);
+            pushAll(/##\s*附录\s*[BbＢ][^\n]*/g);
+            pushAll(/####\s*附录\s*[BbＢ][^\n]*/g);
+            pushAll(/###\s*Appendix\s*B[^\n]*/gi);
+            pushAll(/##\s*Appendix\s*B[^\n]*/gi);
+            pushAll(/###\s*短期方案[^\n]*/g);
+            pushAll(/##\s*短期方案[^\n]*/g);
+
+            let best = candidates.length ? Math.min(...candidates) : -1;
+
+            const bySixCol = findStrategyStartBeforeFirstSixColumnTable(text);
+            if (bySixCol >= 0 && (best < 0 || bySixCol < best)) {
+                best = bySixCol;
+            }
+
+            return best;
+        }
+
+        /**
+         * 首张「6 列」GFM 表前最近的 ### / ## 标题（附录 B/短期/长期），用于模型省略「附录 B」字面时的兜底。
+         */
+        function findStrategyStartBeforeFirstSixColumnTable(s) {
+            const lines = String(s).split('\n');
+            let offset = 0;
+            for (let i = 0; i < lines.length - 1; i++) {
+                const line = lines[i];
+                const t = line.trim();
+                const sep = (lines[i + 1] || '').trim();
+                if (!/^\|/.test(t) || !/^\|/.test(sep) || !/\|?\s*:?-{3,}/.test(sep)) {
+                    offset += line.length + 1;
+                    continue;
+                }
+                if (countGfmHeaderColumns(line) !== 6) {
+                    offset += line.length + 1;
+                    continue;
+                }
+
+                let headingIdx = -1;
+                for (let j = i - 1; j >= 0 && j >= i - 20; j--) {
+                    const L = lines[j].trim();
+                    if (!/^#{1,6}\s+/.test(L)) continue;
+                    if (/附录\s*[BbＢ]|Appendix\s*B|短期方案|长期方案|附录\s*[CcＣ]|Appendix\s*C/i.test(L)) {
+                        headingIdx = j;
+                        break;
+                    }
+                }
+                if (headingIdx < 0) {
+                    for (let j = i - 1; j >= 0 && j >= i - 5; j--) {
+                        const L = lines[j].trim();
+                        if (/^#{1,6}\s+/.test(L)) {
+                            headingIdx = j;
+                            break;
+                        }
+                    }
+                }
+                const targetLine = headingIdx >= 0 ? headingIdx : i;
+                let off = 0;
+                for (let k = 0; k < targetLine; k++) off += lines[k].length + 1;
+                return off;
+            }
+            return -1;
+        }
+
+        /** 若热点段误含「附录 B / 短期 6 列表」，截断到该标题之前 */
+        function truncateHotspotBeforeStrategyMarkers(hotspotChunk) {
+            let h = String(hotspotChunk || '');
+            const cut = findStrategySectionStartIndex(h);
+            if (cut >= 0) h = h.slice(0, cut).trim();
+            h = h.replace(/\n---\s*$/m, '').trim();
+            return h;
+        }
+
+        /**
+         * 将一次粘贴的「完整附录」拆成：数据洞察用 2b 段、策略建议用 B+C 段。
+         * 优先按 ### 附录 B / ### 短期方案 / 首张 6 列表切分；绝不把「附录 A 之后」整段都当作热点。
+         */
+        function splitAppendixMarkdownToHotspotAndStrategy(rawInput) {
+            const s = stripOuterMarkdownCodeFence(rawInput);
+            if (!s.trim()) return { hotspot: '', strategy: '' };
+
+            const idxStrat = findStrategySectionStartIndex(s);
+            const idxA = s.search(/###\s*附录\s*[AaＡ][^\n]*/i);
+            const idx2b = s.search(/^##\s*2b[^\n]*/im);
+
+            let hotspot = '';
+            let strategy = '';
+
+            if (idxStrat >= 0) {
+                strategy = s.slice(idxStrat).trim();
+                const before = s.slice(0, idxStrat);
+
+                if (idxA >= 0 && idxA < idxStrat) {
+                    hotspot = before.slice(idxA).trim();
+                } else if (idx2b >= 0 && idx2b < idxStrat) {
+                    hotspot = before.slice(idx2b).trim();
+                } else {
+                    const tbl = extractFirstGfmPipeTable(before);
+                    if (tbl && tbl.cols === 3) {
+                        hotspot = tbl.text;
+                    } else {
+                        const intro = before.trim();
+                        hotspot = intro ? truncateHotspotBeforeStrategyMarkers(intro) : '';
+                    }
+                }
+            } else {
+                if (idxA >= 0) {
+                    hotspot = truncateHotspotBeforeStrategyMarkers(s.slice(idxA).trim());
+                } else if (idx2b >= 0) {
+                    hotspot = truncateHotspotBeforeStrategyMarkers(s.slice(idx2b).trim());
+                } else {
+                    const tbl = extractFirstGfmPipeTable(s);
+                    if (tbl) {
+                        if (tbl.cols === 3) hotspot = tbl.text;
+                        else if (tbl.cols === 6) strategy = s.trim();
+                    }
+                }
+            }
+
+            hotspot = truncateHotspotBeforeStrategyMarkers(hotspot);
+
+            return { hotspot, strategy };
+        }
+
+        function getCombinedAppendixDisplayForUi(data) {
+            if (!data) return '';
+            const saved = String(data.combined_appendix_user_raw || '').trim();
+            if (saved) return data.combined_appendix_user_raw;
+            const a = String(data.hotspot_2b_user_markdown || '').trim();
+            const bc = String(data.cursor_strategy_user_markdown || '').trim();
+            if (!a && !bc) return '';
+            const parts = [];
+            if (a) parts.push(a);
+            if (bc) parts.push(bc);
+            return parts.join('\n\n---\n\n');
+        }
+
+        function applyCombinedAppendixToReport() {
+            if (!processedData) {
+                alert('请先完成「开始分析」。');
+                return;
+            }
+            const el = document.getElementById('combinedAppendixPaste');
+            const rawFull = el ? String(el.value || '') : '';
+            const raw = rawFull.trim();
+
+            if (!raw) {
+                processedData.combined_appendix_user_raw = '';
+                processedData.hotspot_2b_user_markdown = '';
+                processedData.cursor_strategy_user_markdown = '';
+            } else {
+                processedData.combined_appendix_user_raw = rawFull;
+                const { hotspot, strategy } = splitAppendixMarkdownToHotspotAndStrategy(rawFull);
+                processedData.hotspot_2b_user_markdown = hotspot ? normalizePastedHotspot2bMarkdown(hotspot) : '';
+                processedData.cursor_strategy_user_markdown = strategy ? normalizePastedHotspot2bMarkdown(strategy) : '';
+            }
+
+            finalReport = generateReport(processedData);
+            const markdownOutput = document.getElementById('markdownOutput');
+            if (markdownOutput) markdownOutput.innerHTML = renderReportHtml(finalReport);
+            const jsonOutput = document.getElementById('jsonOutput');
+            if (jsonOutput) jsonOutput.textContent = JSON.stringify(processedData, null, 2);
+
+            if (!raw) {
+                alert('已清除附录回填，数据洞察与策略建议恢复为默认。');
+            } else {
+                alert('已按附录 A / B+C 拆分并应用到「热点与上升原因归纳」与「策略建议」。');
+            }
+        }
+
+        function displayResults() {
+            document.getElementById('resultSection').classList.add('active');
+            document.getElementById('processBtn').disabled = false;
+
+            const cap = document.getElementById('combinedAppendixPaste');
+            if (cap && processedData) {
+                cap.value = getCombinedAppendixDisplayForUi(processedData);
+            }
+
+            // 显示 Markdown（兼容 marked 不同版本的导出方式）
+            const markdownOutput = document.getElementById('markdownOutput');
+            markdownOutput.innerHTML = renderReportHtml(finalReport);
+
+            renderSerperRawPanel();
+
+            // 显示 JSON
+            const jsonOutput = document.getElementById('jsonOutput');
+            jsonOutput.textContent = JSON.stringify(processedData, null, 2);
+
+            refreshCursorBundle();
+
+            // 滚动到结果
+            document.getElementById('resultSection').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function switchTab(tab, btn) {
+            document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+
+            if (tab === 'report') {
+                document.getElementById('reportTab').classList.add('active');
+            } else if (tab === 'serper') {
+                document.getElementById('serperTab').classList.add('active');
+            } else if (tab === 'cursor') {
+                document.getElementById('cursorTab').classList.add('active');
+                refreshCursorBundle();
+            } else {
+                document.getElementById('jsonTab').classList.add('active');
+            }
+        }
+
+        function downloadMarkdown() {
+            const blob = new Blob([finalReport], { type: 'text/markdown' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `SEO周报_${new Date().toISOString().split('T')[0]}.md`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function downloadHTML() {
+            const htmlContent = `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SEO 周报</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; max-width: 1000px; margin: 40px auto; padding: 20px; line-height: 1.6; }
+        h1 { color: #667eea; border-bottom: 3px solid #667eea; padding-bottom: 10px; }
+        h2 { color: #764ba2; margin-top: 30px; }
+        h3 { color: #555; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background: #667eea; color: white; }
+        tr:nth-child(even) { background: #f8f9ff; }
+        code { background: #f4f4f4; padding: 2px 6px; border-radius: 4px; }
+        pre { background: #1e1e1e; color: #d4d4d4; padding: 15px; border-radius: 8px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+${renderReportHtml(finalReport)}
+</body>
+</html>`;
+
+            const blob = new Blob([htmlContent], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `SEO周报_${new Date().toISOString().split('T')[0]}.html`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function downloadJSON() {
+            const blob = new Blob([JSON.stringify(processedData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `SEO数据_${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.className = 'error-message';
+            errorDiv.innerHTML = `<strong>❌ 错误：</strong>${message}`;
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        refreshSerperCacheUI();
+        syncSerperCacheControls();
+    </script>
+</body>
+</html>
